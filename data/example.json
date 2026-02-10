@@ -1,0 +1,27 @@
+[
+  {
+    "id": "doc_1",
+    "text": "Rumors say TechCorp is developing a new AI chip called NebulaX. Analysts expect high performance.",
+    "time": 1
+  },
+  {
+    "id": "doc_2",
+    "text": "TechCorp's stock rose today. Sources confirm the NebulaX project is real and led by Dr. Smith.",
+    "time": 2
+  },
+  {
+    "id": "doc_3",
+    "text": "Dr. Smith, the chief architect at TechCorp, previously worked on the Alpha chip. He is focused on NebulaX efficiency.",
+    "time": 3
+  },
+  {
+    "id": "doc_4",
+    "text": "Breaking: TechCorp officially announces NebulaX. It claims to be 10x faster than competitors.",
+    "time": 4
+  },
+  {
+    "id": "doc_5",
+    "text": "Reviewers are testing NebulaX from TechCorp. Dr. Smith says this is just the beginning.",
+    "time": 5
+  }
+]

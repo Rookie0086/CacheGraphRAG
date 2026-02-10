@@ -1,0 +1,77 @@
+#wget https://github.com/vesoft-inc/nebula-importer/releases/download/v3.4.0/nebula-importer-linux-amd64-v3.4.0
+version: v2
+description: Import knowledge graph
+removeTempFiles: false
+
+clientSettings:
+    retry: 3
+    concurrency: 70
+    channelBufferSize: 40960
+    space: dep # change to your spaece name
+    connection:
+        user: root
+        password: nebula
+        address: 127.0.0.1:9669
+
+logPath: ./err/test.log
+
+log:
+  level: INFO
+  # level: TRACE
+  console: true
+  files:
+    - ./err/nebula-importer.log
+
+files:
+  # 导入实体（节点）
+  - path: ./csv/dep_entities.csv # change to your entitie csv file path
+    failDataPath: ./err/
+    batchSize: 4096
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: false
+      withLabel: false
+      delimiter: ","
+      lazyQuotes: false
+
+    schema:
+      type: vertex
+      vertex:
+        vid:
+          type: string  # 确保与数据库架构一致
+          index: 0  # 对应'id'列
+        tags:
+          - name: entity
+            props:
+              - name: name  # 对应'name'列
+                type: string
+                index: 1
+
+  # 导入关系（边）
+  - path: ./csv/dep_relationships.csv # change to your relationship csv file path
+    failDataPath: ./err/
+    batchSize: 4096
+    inOrder: false
+    type: csv
+    csv:
+      withHeader: false
+      withLabel: false
+      delimiter: ","
+      lazyQuotes: false
+    schema:
+      type: edge
+      edge:
+        name: relationship  # 为边指定一个名称
+        # srcVid:
+        #   type: string  # 对应'src_id'列
+        #   index: 0
+        # dstVid:
+        #   type: string  # 对应'dst_id'列
+        #   index: 1
+        props:
+          - name: relationship  # 对应'relationship'列
+            type: string
+            index: 2
+
+    # (`relationship`,`src_id`,`dst_id`,`relationship`) VALUES  "ABCB11"->"metabolic disease":("genetic association","ABCB11","metabolic disease","genetic association") , "James Lane Allen"->"American Academy of Arts and Letters":("member of","James Lane Allen","American Academy of Arts and Letters","member of") ;, ErrMsg: SemanticError: Unknown column `src_id' in schema, ErrCode: -1009

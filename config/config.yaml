@@ -1,0 +1,8 @@
+model:
+  OPENAI_API_KEY: "sk-1elct44lo7mcstndoct04sstae8pfns98s0j82jdjgkaob7l"
+  OPENAI_BASE_URL: "https://api.aihao123.cn/luomacode-api/open-api/v1"
+  DEEPSEEK_API_KEY: ""
+  DEEPSEEK_BASE_URL: "https://api.deepseek.com/v1/"
+  LLAMA3_8B_URL: "http://localhost:11434"
+  llama3_8b_inst: "/home/shuyurui/model/Llama-3.1-8B"
+  mistral_7b_inst: "/home/hdd/model/Mistral-7B-Instruct-v0.3"
