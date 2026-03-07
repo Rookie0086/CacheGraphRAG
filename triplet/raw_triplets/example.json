@@ -1,0 +1,56 @@
+{
+  "entities": [
+    {
+      "id": "Maibritt Kviesgaard",
+      "type": "PERSON",
+      "desc": "Former Danish handball player, born 15 May 1986"
+    },
+    {
+      "id": "Danish national team",
+      "type": "ORG",
+      "desc": "Denmark women's national handball team"
+    },
+    {
+      "id": "2010 European Women's Handball Championship",
+      "type": "EVENT",
+      "desc": "2010 continental handball championship for women"
+    },
+    {
+      "id": "All-Star Team Best Right Wing",
+      "type": "CONCEPT",
+      "desc": "Award for best right wing player in tournament"
+    }
+  ],
+  "relations": [
+    {
+      "src": "Maibritt Kviesgaard",
+      "tgt": "Denmark",
+      "rel": "NATIONALITY"
+    },
+    {
+      "src": "Maibritt Kviesgaard",
+      "tgt": "Danish national team",
+      "rel": "PLAYED_FOR"
+    },
+    {
+      "src": "Maibritt Kviesgaard",
+      "tgt": "2010 European Women's Handball Championship",
+      "rel": "COMPETED_IN"
+    },
+    {
+      "src": "Danish national team",
+      "tgt": "2010 European Women's Handball Championship",
+      "rel": "PARTICIPATED_IN"
+    },
+    {
+      "src": "Danish national team",
+      "tgt": "Denmark",
+      "rel": "REPRESENTS"
+    },
+    {
+      "src": "Maibritt Kviesgaard",
+      "tgt": "All-Star Team Best Right Wing",
+      "rel": "AWARDED"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import time
+import torch
 from typing import List  # Optional, Dict,
 
 from pymilvus import (  # utility,; FieldSchema,; CollectionSchema,; MilvusClient,; Connections,
@@ -6,6 +7,7 @@ from pymilvus import (  # utility,; FieldSchema,; CollectionSchema,; MilvusClien
     DataType,
     Milvus,
     connections,
+    db,
 )
 
 from utils.base import print_text
@@ -70,6 +72,8 @@ class MilvusDB:
         connections.connect("default", host="localhost", port=server_port)
 
     def insert(self, entities):
+        if not self.db:
+            self.load()
         time_s = time.time()
         # self.client.insert(self.db_name, entities)
         self.db.insert(entities)
@@ -78,6 +82,25 @@ class MilvusDB:
             print(f"insert cost {time_e - time_s}")
 
         self.db.load()
+
+    def flush(self, retries=3, base_delay=1.0):
+        if not self.db:
+            return
+        last_err = None
+        for attempt in range(retries + 1):
+            try:
+                self.db.flush()
+                return
+            except Exception as exc:
+                last_err = exc
+                # Reconnect and retry on transient channel errors.
+                try:
+                    connections.disconnect("default")
+                except Exception:
+                    pass
+                connections.connect("default", host="localhost", port=self.server_port)
+                time.sleep(base_delay * (2**attempt))
+        raise last_err
 
     def load(self):
         if not self.db:
@@ -168,52 +191,55 @@ class MilvusDB:
         self.db = Collection(self.db_name)
         self.db.load()
 
+    async def insert_chunk_async(self, chunk_id: str, vector: List[float]):
+        if not self.db:
+            self.load()
+        pk = abs(hash(chunk_id)) % (2**63 - 1)
+        data = [[pk], [vector]]
+        print(f"=== inserting chunk {chunk_id} with pk {pk} into Milvus ===")
+        self.insert(data)
+        print(f"=== chunk {chunk_id} inserted into Milvus with pk {pk} ===")
 
 def test_db(db_name):
-    vector_db = MilvusDB("cache", overwrite=True, metric="COSINE")
-
+    vector_db = MilvusDB(db_name, overwrite=True, metric="COSINE")
+    db_client = myMilvus()
     vector_db.create()
     print("create done!")
 
     print(f"schema {vector_db.db.schema}")
 
-    vector_db.show_collections_stats()
+    db_client.show_collections_stats(db_name=db_name)
     pk, dis = vector_db.search([[1, 1, 1, 1]], limit=10)
     print(f"pk {pk}, dis {dis}")
-
-    vector_db.insert([[1], [[1, 1, 1, 1]]])
-    vector_db.insert([[2], [[2, 2, 2, 2]]])
-    vector_db.insert([[3], [[3, 3, 3, 3]]])
-    pk, dis = vector_db.search([[1, 1, 1, 1]], limit=10)
+    v1 = torch.rand(1024).tolist()
+    vector_db.insert([[1], [v1]])
+    vector_db.insert([[2], [torch.rand(1024).tolist()]])
+    vector_db.insert([[3], [torch.rand(1024).tolist()]])
+    vector_db.flush()
+    pk, dis = vector_db.search([v1], limit=10)
     print(f"pk {pk}, dis {dis}")
 
-    vector_db.insert(
-        [[5, 6, 7, 8], [[5, 5, 5, 5], [6, 6, 6, 6], [7, 7, 7, 7], [8, 8, 8, 8]]]
-    )
-    pk, dis = vector_db.search([[7, 7, 7, 7]], limit=10)
-    print(f"pk {pk}, dis {dis}")
 
-    vector_db.show_collections_stats()
+    db_client.show_collections_stats(db_name=db_name)
 
 
 if __name__ == "__main__":
 
-    # test_db('cache')
+    # test_db('test')
 
-    db_name = "test"
-    db_name = "rgb_entities"
-    db_name = "rgb"
-
-    dim = 1024
-
+    db_name = "example"
+    # connections.connect("default", host="127.0.0.1", port="19530")
+    # print(db.list_database())
     # create vector database
     # create_datebase(db_name='crag_small')
 
     vector_db = MilvusDB(db_name=db_name, overwrite=False)
     client = myMilvus()
-
+    vector_db.flush()
     client.show_collections_stats(db_name=db_name)  # dict {'row_count': 150600}
     count = client.get_vector_count(db_name=db_name)
     print(f"=== vector count: {count}")
+    des_collection = client.describe_collection(collection_name=db_name)
+    print(f"=== collection schema: {des_collection}")
 
-    client.show_all_collections()  # list
+# python -m database.milvus

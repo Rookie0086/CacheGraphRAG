@@ -97,12 +97,11 @@ def llm_extract(llm: LLMEnv, context):
     while retry > 0:
         try:
             response = extract_triplet(llm, context=context)
-            return response
+            print("Raw response from LLM:", response)
             output = extract_json_str(response)
             parsed_output = json.loads(output)
-            # assert 'entities' in parsed_output and 'triplets' in parsed_output
-            assert "triplets" in parsed_output
-            if len(parsed_output["triplets"]) == 0:
+            assert "entities" in parsed_output
+            if len(parsed_output["entities"]) == 0:
                 retry -= 1
                 continue
             return parsed_output
@@ -163,10 +162,13 @@ if __name__ == "__main__":
     
     input_context = "Maibritt Kviesgaard (born 15 May 1986) is a former Danish handball player. She has also played on the Danish national team.\
         She competed at the 2010 European Women's Handball Championship, where the Danish team placed fourth, \
-        and Kviesgaard was voted into the All-Star Team as Best Right Wing."
+            and Kviesgaard was voted into the All-Star Team as Best Right Wing."
     output = llm_extract(llm, context=input_context)
-    print("Final extracted triplets:")
-    print(output)
+    log_path = f"./triplet/raw_triplets/example.json"
+    if output is not None:
+        save_to_json(log_path, output)
+    else:
+        print("No triplets extracted for example input.")
     exit(0)
 
     if "rgb" in args.dataset:

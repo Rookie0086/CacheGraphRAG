@@ -69,20 +69,19 @@
 CacheGraphRAG/
 ├── config/                 # 配置文件 (阈值、数据库连接)
 ├── data/                   # 实验数据集 (Experiment Stream)
+├── database/               # 数据库相关操作
 ├── src/
 │   ├── core/
 │   │   ├── entity_resolver.py   # 基于Milvus的实体对齐核心
 │   │   ├── memory_graph.py      # NetworkX 内存图与计数逻辑
 │   │   └── graph_store.py       # NebulaGraph 交互接口
-│   ├── ingestion/
-│   │   ├── extractor.py         # LLM 抽取 Prompt 与 Pipeline
-│   │   └── processing.py        # 文本切块与清洗
 │   ├── retrieval/
 │   │   └── searcher.py          # 混合检索器 (Vector + Graph)
 │   └── pipeline/
 │       └── manager.py           # 主调度器
 ├── tests/                  # 单元测试
-├── main.py                 # 启动入口
+├── triplet/                # LLM 抽取 Prompt 与 Pipeline
+├── utils.py                # 工具函数
 └── requirements.txt
 
 ```

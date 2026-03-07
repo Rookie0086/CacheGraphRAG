@@ -7,10 +7,6 @@ from database.nebulagraph import NebulaClient
 from utils.base import file_exist
 
 
-def func():
-    pass
-
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="database info")

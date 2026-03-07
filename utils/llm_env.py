@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import yaml
 from llama_index.llms.ollama import Ollama
-from openai import OpenAI
+from openai import OpenAI,AsyncOpenAI
 from pydantic import BaseModel, Field
 
 # from llama_index.llms.openai import OpenAI
@@ -98,6 +98,9 @@ class EmbeddingEnv:
 
     def get_embeddings(self, texts: list) -> np.ndarray:
         return self._encode(texts)
+    
+    async def get_embedding_async(self, text: str) -> np.ndarray:
+        return self._encode(text)
 
     def calculate_similarity(self, text1: str, text2: str) -> float:
         e1 = self.get_embedding(text1)
@@ -170,6 +173,13 @@ class OpenAIEnv(BaseLLMEnv):
         if not api_key or not base_url:
             raise ValueError("OpenAI api_key and base_url must be provided")
         self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.asyclient = AsyncOpenAI(
+            base_url=base_url,
+            api_key=api_key,
+            timeout=300,
+            default_headers={'RITS_API_KEY': os.environ["RITS_API_KEY"]} if os.environ.get("RITS_API_KEY") else None
+        )
+        print(f"Initialized OpenAIEnv with model={self.model}, base_url={base_url}, temperature={self.temperature}")
 
     def _flatten_rich_text(self, node) -> str:
         """提取接口自定义 message 结构里的纯文本内容。"""
@@ -191,6 +201,30 @@ class OpenAIEnv(BaseLLMEnv):
             return "".join(self._flatten_rich_text(item) for item in node)
         return ""
 
+    async def async_complete(self, prompt, verbose=False, return_info=False):
+        try:
+            # print(f"Async prompt: {prompt}\n")
+            response = await self.asyclient.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                temperature=self.temperature,
+                stream=False,
+            )
+            if getattr(response, "choices", None):
+                message = response.choices[0].message
+                # print(f"Raw async response from LLM: {message.content}\n")
+                if message and message.content:
+                    return message.content.strip()
+            return None
+        except Exception as e:
+            print(f"Error in async LLM API call: {e}")
+            return None
+    
     def complete(self, prompt, verbose=False, return_info=False):
         try:
             response = self.client.chat.completions.create(
@@ -764,6 +798,12 @@ class LLMEnv:
 
     def complete(self, prompt: str, verbose: bool = False, return_info: bool = False):
         return self.llm.complete(prompt, verbose=verbose, return_info=return_info)
+    
+    async def async_complete(self, prompt: str, verbose: bool = False, return_info: bool = False):
+        if hasattr(self.llm, "async_complete"):
+            return await self.llm.async_complete(prompt, verbose=verbose, return_info=return_info)
+        else:
+            raise NotImplementedError(f"Async complete not implemented for backend {self.backend}")
 
     def hello_world(self):
         response = self.complete("who are you?")
