@@ -1,0 +1,301 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d4" for="edge" attr.name="source_chunk" attr.type="string" />
+  <key id="d3" for="edge" attr.name="relation" attr.type="string" />
+  <key id="d2" for="node" attr.name="source_chunks" attr.type="string" />
+  <key id="d1" for="node" attr.name="type" attr.type="string" />
+  <key id="d0" for="node" attr.name="name" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="7789508077339886068">
+      <data key="d0">Bush</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_18148539a28a</data>
+    </node>
+    <node id="309627150196747875">
+      <data key="d0">Chicago P.D.</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_18148539a28a</data>
+    </node>
+    <node id="8001215588993479299">
+      <data key="d0">Isaacs</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_18148539a28a</data>
+    </node>
+    <node id="2390719133225037922">
+      <data key="d0">Good Sam</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_427a9acdd30b,chunk_6d1a4296c5be,chunk_523a9298f524</data>
+    </node>
+    <node id="2766355424401909652">
+      <data key="d0">Samantha Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_6d1a4296c5be</data>
+    </node>
+    <node id="3627085421232015802">
+      <data key="d0">Dr. Rob Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_6d1a4296c5be</data>
+    </node>
+    <node id="623168769555219189">
+      <data key="d0">CBS</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_6d1a4296c5be</data>
+    </node>
+    <node id="6130532514472830099">
+      <data key="d0">The Good Doctor</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_427a9acdd30b</data>
+    </node>
+    <node id="153501929556483927">
+      <data key="d0">Shaun Murphy</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_427a9acdd30b</data>
+    </node>
+    <node id="6422805501387469730">
+      <data key="d0">California hospital</data>
+      <data key="d1">LOC</data>
+      <data key="d2">chunk_427a9acdd30b</data>
+    </node>
+    <node id="6372239622031869174">
+      <data key="d0">Freddie Highmore</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_427a9acdd30b</data>
+    </node>
+    <node id="4417551432499332979">
+      <data key="d0">Sam</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_427a9acdd30b</data>
+    </node>
+    <node id="4681241774825060254">
+      <data key="d0">Rob</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_427a9acdd30b</data>
+    </node>
+    <node id="8938217545023872475">
+      <data key="d0">Sam Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="2845035148848109759">
+      <data key="d0">Sophia Bush</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da,chunk_523a9298f524</data>
+    </node>
+    <node id="7346473920534072951">
+      <data key="d0">Malcolm Kingsley</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="3434373610381793235">
+      <data key="d0">Edwin Hodge</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="4798240077942423959">
+      <data key="d0">Skye P. Marshall</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="2040428049514362519">
+      <data key="d0">Omar Maskati</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="4246001730156712685">
+      <data key="d0">Davi Santos</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="5140714298174761063">
+      <data key="d0">Medical Drama</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_20e0d60558da,chunk_523a9298f524</data>
+    </node>
+    <node id="459093903287923708">
+      <data key="d0">Interracial Relationship</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="1699229990319513195">
+      <data key="d0">Wealthy Black Americans</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_20e0d60558da</data>
+    </node>
+    <node id="6747858749000929840">
+      <data key="d0">CBS</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="8862763339452710691">
+      <data key="d0">Jason Isaacs</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="5200229573555720232">
+      <data key="d0">Dr. Sam Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="6379484192792921089">
+      <data key="d0">hospital</data>
+      <data key="d1">LOC</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="1781877782639035969">
+      <data key="d0">Grey's Anatomy</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="8807418779501835624">
+      <data key="d0">The Good Doctor</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="2309985154066370644">
+      <data key="d0">family issues</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <node id="5588470633911318019">
+      <data key="d0">dysfunctional family dramas</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_523a9298f524</data>
+    </node>
+    <edge source="7789508077339886068" target="309627150196747875" id="HEADLINED_chunk_18148539a28a">
+      <data key="d3">HEADLINED</data>
+      <data key="d4">chunk_18148539a28a</data>
+    </edge>
+    <edge source="2390719133225037922" target="623168769555219189" id="AIRED_ON_chunk_6d1a4296c5be">
+      <data key="d3">AIRED_ON</data>
+      <data key="d4">chunk_6d1a4296c5be</data>
+    </edge>
+    <edge source="2390719133225037922" target="6747858749000929840" id="AIRED_ON_chunk_523a9298f524">
+      <data key="d3">AIRED_ON</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="8862763339452710691" id="STARRING_chunk_523a9298f524">
+      <data key="d3">STARRING</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="2845035148848109759" id="STARRING_chunk_523a9298f524">
+      <data key="d3">STARRING</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="5200229573555720232" id="FEATURES_CHARACTER_chunk_523a9298f524">
+      <data key="d3">FEATURES_CHARACTER</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="5140714298174761063" id="BELONGS_TO_GENRE_chunk_523a9298f524">
+      <data key="d3">BELONGS_TO_GENRE</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="2309985154066370644" id="EXPLORES_THEME_chunk_523a9298f524">
+      <data key="d3">EXPLORES_THEME</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="1781877782639035969" id="RELATED_TO_chunk_523a9298f524">
+      <data key="d3">RELATED_TO</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="8807418779501835624" id="RELATED_TO_chunk_523a9298f524">
+      <data key="d3">RELATED_TO</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2390719133225037922" target="5588470633911318019" id="RELATED_TO_chunk_523a9298f524">
+      <data key="d3">RELATED_TO</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="2766355424401909652" target="2390719133225037922" id="CHARACTER_IN_chunk_6d1a4296c5be">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_6d1a4296c5be</data>
+    </edge>
+    <edge source="2766355424401909652" target="3627085421232015802" id="DAUGHTER_OF_chunk_6d1a4296c5be">
+      <data key="d3">DAUGHTER_OF</data>
+      <data key="d4">chunk_6d1a4296c5be</data>
+    </edge>
+    <edge source="2766355424401909652" target="3627085421232015802" id="REPLACED_AS_HEAD_BY_chunk_6d1a4296c5be">
+      <data key="d3">REPLACED_AS_HEAD_BY</data>
+      <data key="d4">chunk_6d1a4296c5be</data>
+    </edge>
+    <edge source="3627085421232015802" target="2390719133225037922" id="CHARACTER_IN_chunk_6d1a4296c5be">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_6d1a4296c5be</data>
+    </edge>
+    <edge source="3627085421232015802" target="2766355424401909652" id="FATHER_OF_chunk_6d1a4296c5be">
+      <data key="d3">FATHER_OF</data>
+      <data key="d4">chunk_6d1a4296c5be</data>
+    </edge>
+    <edge source="6130532514472830099" target="2390719133225037922" id="RECOMMENDED_FOR_FANS_OF_chunk_427a9acdd30b">
+      <data key="d3">RECOMMENDED_FOR_FANS_OF</data>
+      <data key="d4">chunk_427a9acdd30b</data>
+    </edge>
+    <edge source="153501929556483927" target="6130532514472830099" id="MAIN_CHARACTER_OF_chunk_427a9acdd30b">
+      <data key="d3">MAIN_CHARACTER_OF</data>
+      <data key="d4">chunk_427a9acdd30b</data>
+    </edge>
+    <edge source="153501929556483927" target="6422805501387469730" id="RELOCATED_TO_chunk_427a9acdd30b">
+      <data key="d3">RELOCATED_TO</data>
+      <data key="d4">chunk_427a9acdd30b</data>
+    </edge>
+    <edge source="6372239622031869174" target="153501929556483927" id="PORTRAYS_chunk_427a9acdd30b">
+      <data key="d3">PORTRAYS</data>
+      <data key="d4">chunk_427a9acdd30b</data>
+    </edge>
+    <edge source="4417551432499332979" target="2390719133225037922" id="CHARACTER_IN_chunk_427a9acdd30b">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_427a9acdd30b</data>
+    </edge>
+    <edge source="4681241774825060254" target="2390719133225037922" id="CHARACTER_IN_chunk_427a9acdd30b">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_427a9acdd30b</data>
+    </edge>
+    <edge source="8938217545023872475" target="2845035148848109759" id="PORTRAYED_BY_chunk_20e0d60558da">
+      <data key="d3">PORTRAYED_BY</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="8938217545023872475" target="5140714298174761063" id="LEAD_IN_chunk_20e0d60558da">
+      <data key="d3">LEAD_IN</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="7346473920534072951" target="3434373610381793235" id="PORTRAYED_BY_chunk_20e0d60558da">
+      <data key="d3">PORTRAYED_BY</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="7346473920534072951" target="1699229990319513195" id="REPRESENTS_chunk_20e0d60558da">
+      <data key="d3">REPRESENTS</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="7346473920534072951" target="8938217545023872475" id="LOVE_INTEREST_OF_chunk_20e0d60558da">
+      <data key="d3">LOVE_INTEREST_OF</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="4798240077942423959" target="5140714298174761063" id="CAST_MEMBER_IN_chunk_20e0d60558da">
+      <data key="d3">CAST_MEMBER_IN</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="2040428049514362519" target="5140714298174761063" id="CAST_MEMBER_IN_chunk_20e0d60558da">
+      <data key="d3">CAST_MEMBER_IN</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="4246001730156712685" target="5140714298174761063" id="CAST_MEMBER_IN_chunk_20e0d60558da">
+      <data key="d3">CAST_MEMBER_IN</data>
+      <data key="d4">chunk_20e0d60558da</data>
+    </edge>
+    <edge source="5200229573555720232" target="5200229573555720232" id="FAMILY_RELATION_chunk_523a9298f524">
+      <data key="d3">FAMILY_RELATION</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="5200229573555720232" target="6379484192792921089" id="WORKS_AT_chunk_523a9298f524">
+      <data key="d3">WORKS_AT</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="1781877782639035969" target="5140714298174761063" id="BELONGS_TO_GENRE_chunk_523a9298f524">
+      <data key="d3">BELONGS_TO_GENRE</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+    <edge source="8807418779501835624" target="5140714298174761063" id="BELONGS_TO_GENRE_chunk_523a9298f524">
+      <data key="d3">BELONGS_TO_GENRE</data>
+      <data key="d4">chunk_523a9298f524</data>
+    </edge>
+  </graph>
+</graphml>

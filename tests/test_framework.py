@@ -32,14 +32,6 @@ llm = LLMEnv(
     base_url=base_url
     )
 
-vector_db = MilvusDB(db_name="example", overwrite=False)
-milvus_client = myMilvus()
-if "example" not in milvus_client.list_collections():
-    vector_db.create()
-else:
-    vector_db.load()
-milvus_client.show_collections_stats(db_name="example")
-print(f"=== vector count: {milvus_client.get_vector_count('example')}")
 
 class MemoryGraphManager:
     def __init__(self, promotion_threshold=3):
@@ -48,6 +40,64 @@ class MemoryGraphManager:
         # 记录每个 chunk 的被检索/访问次数: {chunk_id: count}
         self.chunk_access_counter = {}
         self.threshold = promotion_threshold
+
+    def _normalize_attrs_for_export(self, g: nx.MultiDiGraph) -> nx.MultiDiGraph:
+        export_g = g.copy()
+        for _, data in export_g.nodes(data=True):
+            if "source_chunks" in data and isinstance(data["source_chunks"], set):
+                data["source_chunks"] = list(data["source_chunks"])
+        for _, _, _, data in export_g.edges(data=True, keys=True):
+            if "source_chunk" in data and isinstance(data["source_chunk"], set):
+                data["source_chunk"] = list(data["source_chunk"])
+        return export_g
+
+    def _normalize_attrs_for_graphml(self, g: nx.MultiDiGraph) -> nx.MultiDiGraph:
+        export_g = g.copy()
+        for _, data in export_g.nodes(data=True):
+            if "source_chunks" in data and isinstance(data["source_chunks"], (set, list)):
+                data["source_chunks"] = ",".join(str(v) for v in data["source_chunks"])
+        for _, _, _, data in export_g.edges(data=True, keys=True):
+            if "source_chunk" in data and isinstance(data["source_chunk"], (set, list)):
+                data["source_chunk"] = ",".join(str(v) for v in data["source_chunk"])
+        return export_g
+
+    def _ensure_parent_dir(self, path: str):
+        parent = os.path.dirname(path)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+
+    def _restore_attrs_after_import(self, g: nx.MultiDiGraph) -> nx.MultiDiGraph:
+        for _, data in g.nodes(data=True):
+            if "source_chunks" in data and isinstance(data["source_chunks"], list):
+                data["source_chunks"] = set(data["source_chunks"])
+        for _, _, _, data in g.edges(data=True, keys=True):
+            if "source_chunk" in data and isinstance(data["source_chunk"], list):
+                data["source_chunk"] = set(data["source_chunk"])
+        return g
+
+    def save_graph_graphml(self, path: str):
+        from networkx.readwrite.graphml import write_graphml_xml
+
+        self._ensure_parent_dir(path)
+        export_g = self._normalize_attrs_for_graphml(self.graph)
+        write_graphml_xml(export_g, path)
+
+    def load_graph_graphml(self, path: str):
+        g = nx.read_graphml(path)
+        if not isinstance(g, nx.MultiDiGraph):
+            g = nx.MultiDiGraph(g)
+        self.graph = self._restore_attrs_after_import(g)
+
+    def save_graph_gexf(self, path: str):
+        self._ensure_parent_dir(path)
+        export_g = self._normalize_attrs_for_graphml(self.graph)
+        nx.write_gexf(export_g, path)
+
+    def load_graph_gexf(self, path: str):
+        g = nx.read_gexf(path)
+        if not isinstance(g, nx.MultiDiGraph):
+            g = nx.MultiDiGraph(g)
+        self.graph = self._restore_attrs_after_import(g)
 
     def add_node(self, uid: str, name: str, type: str, source_chunk: str):
         """添加节点。如果已存在，则追加 source_chunk"""
@@ -141,25 +191,61 @@ class MemoryGraphManager:
         for uid, data in sample_nodes:
             chunks_str = ", ".join(list(data['source_chunks'])[:2])
             print(f"   - {data['name']} ({data['type']}) | 来源: [{chunks_str}...]")
-        print("="*40 + "\n")
+        print("="*40 + "\n")    
 
 
 class AsyncEntityResolver:
     def __init__(
-        self, 
-        milvus_client,  
+        self,   
         embedding_func,
         collection_name="entity_index", 
         threshold=0.92
     ):
-        self.milvus = milvus_client
+        self.milvus_db = MilvusDB(db_name=collection_name, overwrite=False)
+        self.milvus_client = myMilvus()
         self.embed = embedding_func
         self.collection_name = collection_name
         self.threshold = threshold
         
+        if self.collection_name not in self.milvus_client.list_collections():
+            self.milvus_db.create_entity_collection()
+        else:
+            self.milvus_db.load()
         # 本地级联缓存：减少对相同实体的重复 Embedding 和 数据库查询
         # 结构: { "entity_name:entity_desc": "global_uid" }
         self.local_cache = {}
+        self._pending_tasks = []
+
+    def _make_uid(self) -> int:
+        # Keep uid consistent with INT64 schema.
+        return uuid.uuid4().int % (2**63 - 1)
+
+    def _search_milvus(self, vector, search_params):
+        if not self.milvus_db.db:
+            self.milvus_db.load()
+        return self.milvus_db.db.search(
+            data=[vector],
+            anns_field="vec",
+            param=search_params,
+            limit=1,
+            output_fields=["uid", "name"],
+            consistency_level="Strong",
+        )
+
+    def _log_task_error(self, task: asyncio.Task):
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            # Task cancelled during shutdown; ignore.
+            return
+        except Exception as exc:
+            print(f"Error in background entity insert: {exc}")
+
+    async def wait_pending(self):
+        if not self._pending_tasks:
+            return
+        await asyncio.gather(*self._pending_tasks, return_exceptions=True)
+        self._pending_tasks.clear()
 
     async def resolve_async(self, entity_name: str, entity_desc: str) -> str:
         """
@@ -178,14 +264,7 @@ class AsyncEntityResolver:
         # 3. 在 Milvus 中进行向量检索 (使用 to_thread 防止同步阻塞)
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         
-        results = await asyncio.to_thread(
-            self.milvus.search,
-            collection_name=self.collection_name,
-            data=[vector],
-            limit=1,
-            output_fields=["uid", "name"],
-            search_params=search_params
-        )
+        results = await asyncio.to_thread(self._search_milvus, vector, search_params)
 
         # 4. 判定逻辑
         if results and len(results[0]) > 0:
@@ -197,23 +276,26 @@ class AsyncEntityResolver:
                 return exist_uid
 
         # 5. 未命中：生成新实体 UID，并异步注册到 Milvus
-        new_uid = f"ent_{uuid.uuid4().hex[:10]}"
+        new_uid = self._make_uid()
         self.local_cache[cache_key] = new_uid
         
         # 触发异步写入，不等待其完成即可返回
-        asyncio.create_task(self._register_new_entity(new_uid, entity_name, vector))
+        task = asyncio.create_task(self._register_new_entity(new_uid, entity_name, vector))
+        task.add_done_callback(self._log_task_error)
+        self._pending_tasks.append(task)
         
         return new_uid
 
     async def _register_new_entity(self, uid: str, name: str, vector: list):
         """后台异步将新实体写入 Milvus"""
+        if hasattr(vector, "tolist"):
+            vector = vector.tolist()
         data = [
-            {"uid": uid, "name": name, "embedding": vector}
+            {"uid": uid, "name": name, "vec": vector}
         ]
         await asyncio.to_thread(
-            self.milvus.insert,
-            collection_name=self.collection_name,
-            data=data
+            self.milvus_db.insert,
+            data
         )
 
 
@@ -221,13 +303,13 @@ class DocumentIngestionPipeline:
     def __init__(
         self, 
         llm_client: LLMEnv,   # LLM 环境 (负责抽取和 Embedding)
-        vector_store,      # Milvus 客户端 (负责存储 Chunk)
+        # vector_store,      # Milvus 客户端 (负责存储 Chunk)
         memory_graph,      # NetworkX 管理器
         entity_resolver,   # 负责与 Milvus 交互进行实体对齐
         max_concurrency=10 # LLM API 并发限制
     ):
         self.llm = llm_client
-        self.vector_store = vector_store
+        self.vector_store = MilvusDB(db_name="example", overwrite=False) # 直接在 Pipeline 内部管理 MilvusDB 实例
         self.memory_graph = memory_graph
         self.entity_resolver = entity_resolver
         self.semaphore = asyncio.Semaphore(max_concurrency)
@@ -290,29 +372,27 @@ class DocumentIngestionPipeline:
                 # ==========================================
                 # 1. 调用 LLM 进行抽取 (使用之前设计的严格 Schema)
                 raw_json_str = await self.llm.async_complete(prompt=prompt_extract_triplest_str.format(context=text))
+                print(f"Chunk {chunk_id} 的原始抽取结果: {raw_json_str[:200]}...") # 只打印前200字符预览
                 entities, relations = self._clean_and_validate(raw_json_str)
 
                 if not entities:
-                    return True # 抽取为空，无需入图，但不算失败
-                
-                print(f"Chunk {chunk_id} 抽取到 {len(entities)} 个实体和 {len(relations)} 条关系。")
-                print(f"示例实体: {entities[0]} | 示例关系: {relations[0] if relations else '无'}")
+                    return True # 抽取为空，无需入图，但不算失败              
 
                 # 2. 实体对齐 (Entity Resolution)
                 # 将 LLM 抽取的临时 ID 转换为全局唯一 ID
-                # aligned_entities = {}
-                # for ent in entities:
-                #     # resolver 会去 Milvus 查重，返回全局 uid
-                #     uid = await self.entity_resolver.resolve_async(ent["id"], ent["desc"])
-                #     aligned_entities[ent["id"]] = {
-                #         "uid": uid, 
-                #         "name": ent["id"], 
-                #         "type": ent["type"], 
-                #         "desc": ent["desc"]
-                #     }
+                aligned_entities = {}
+                for ent in entities:
+                    # resolver 会去 Milvus 查重，返回全局 uid
+                    uid = await self.entity_resolver.resolve_async(ent["id"], ent["desc"])
+                    aligned_entities[ent["id"]] = {
+                        "uid": uid, 
+                        "name": ent["id"], 
+                        "type": ent["type"], 
+                        "desc": ent["desc"],
+                    }
 
                 # # 3. 写入 NetworkX (Memory Graph)
-                # self._write_to_memory_graph(chunk_id, aligned_entities, relations)
+                self._write_to_memory_graph(chunk_id, aligned_entities, relations)
 
                 return True
 
@@ -325,7 +405,16 @@ class DocumentIngestionPipeline:
         try:
             if not raw_str:
                 return [], []
-            data = json.loads(raw_str)
+            raw_str = raw_str.strip()
+            if raw_str.startswith("```"):
+                raw_str = raw_str.strip("`")
+                if raw_str.lower().startswith("json"):
+                    raw_str = raw_str[4:]
+            start = raw_str.find("{")
+            end = raw_str.rfind("}")
+            if start == -1 or end == -1 or end <= start:
+                return [], []
+            data = json.loads(raw_str[start : end + 1])
             entities = data.get("entities", [])
             relations = data.get("relations", [])
             
@@ -381,24 +470,23 @@ async def run_tests():
     print("🚀 --- [阶段 1: 文档入库处理 (Ingestion)] ---")
     mem_graph = MemoryGraphManager(promotion_threshold=2) # 测试环境阈值设低一点：2次
     resolver = AsyncEntityResolver(
-        milvus_client=milvus_client,
         embedding_func=llm.embed_model.get_embedding_async,
     )
 
     pipeline = DocumentIngestionPipeline(
         llm_client=llm, 
-        vector_store=vector_db, 
         memory_graph=mem_graph, 
         entity_resolver=resolver,
     )
     
     await pipeline.process_document(document_text, source_file="data/example.txt")
+    await resolver.wait_pending()
     print("文档入库处理完成！")
     if os.getenv("MILVUS_FORCE_FLUSH") == "1":
         flush_ok = False
         for attempt in range(3):
             try:
-                vector_db.db.flush()
+                resolver.milvus_db.flush()
                 flush_ok = True
                 break
             except MilvusException as e:
@@ -409,12 +497,13 @@ async def run_tests():
             print("Warning: Milvus flush failed after retries; continue without hard fail.")
 
     try:
-        print(vector_db.db.num_entities)
-        print(milvus_client.get_collection_stats("example"))
+        print(resolver.milvus_client.get_collection_stats("entity_index"))
     except MilvusException as e:
         print(f"Warning: Failed to read collection stats: {e}")
-    # mem_graph.show_status()
 
+    mem_graph.show_status()
+    mem_graph.save_graph_graphml("subgraph/memory_graph.graphml")
+    mem_graph.save_graph_gexf("subgraph/memory_graph.gexf")
     # print("\n🚀 --- [阶段 2: 模拟检索与子图晋升 (Retrieval & Promotion)] ---")
     
     # # 我们模拟来了 3 个相关的 Query，通过 VectorDB 定位到了特定的 Chunk

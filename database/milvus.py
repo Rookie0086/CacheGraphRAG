@@ -37,9 +37,6 @@ class myMilvus(Milvus):
         ret = self.drop_collection(db_name)
         print(f"=== clear collection {db_name}: {ret}")
 
-    # def exist(self, db_name):
-    #     return self.has_collection(db_name)
-
     def get_vector_count(self, db_name):
         ret = self.get_collection_stats(db_name)
         return ret["row_count"]
@@ -191,6 +188,38 @@ class MilvusDB:
         self.db = Collection(self.db_name)
         self.db.load()
 
+    def create_entity_collection(self, consistency_level="Session"):
+
+        if self.overwrite and self.db_name in self.client.list_collections():
+            self.client.drop_collection(self.db_name)
+
+        fields = {
+            "fields": [
+                {"name": "uid", "type": DataType.INT64, "is_primary": True},
+                {"name": "name", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
+                # {"name": "tsz", "type": DataType.TIMESTAMPTZ, nullable=True},
+            ],
+            "auto_id": False,
+        }
+
+        self.client.create_collection(
+            self.db_name,
+            fields,
+            consistency_level=consistency_level,
+            # properties={"collection.ttl.seconds": 1209600},  # 设置 TTL 为 1 天
+        )
+
+        index = {
+            "index_type": "IVF_FLAT",
+            "metric_type": self.metric,
+            "params": {"nlist": 128},
+        }
+        self.client.create_index(self.db_name, "vec", index)
+
+        self.db = Collection(self.db_name)
+        self.db.load()
+
     async def insert_chunk_async(self, chunk_id: str, vector: List[float]):
         if not self.db:
             self.load()
@@ -222,12 +251,23 @@ def test_db(db_name):
 
     db_client.show_collections_stats(db_name=db_name)
 
+def test_entity_db(db_name):
+    vector_db = MilvusDB(db_name, overwrite=True, metric="COSINE")
+    db_client = myMilvus()
+    vector_db.create_entity_collection()
+    print("create done!")
+
+    print(f"schema {vector_db.db.schema}")
+
+    db_client.show_collections_stats(db_name=db_name)
+
 
 if __name__ == "__main__":
 
     # test_db('test')
 
-    db_name = "example"
+    db_name = "entity_index"
+    # test_entity_db(db_name)
     # connections.connect("default", host="127.0.0.1", port="19530")
     # print(db.list_database())
     # create vector database
@@ -237,8 +277,7 @@ if __name__ == "__main__":
     client = myMilvus()
     vector_db.flush()
     client.show_collections_stats(db_name=db_name)  # dict {'row_count': 150600}
-    count = client.get_vector_count(db_name=db_name)
-    print(f"=== vector count: {count}")
+    client.show_all_collections()
     des_collection = client.describe_collection(collection_name=db_name)
     print(f"=== collection schema: {des_collection}")
 
