@@ -1,6 +1,6 @@
 import time
 import torch
-from typing import List  # Optional, Dict,
+from typing import List, Optional  # Optional, Dict,
 
 from pymilvus import (  # utility,; FieldSchema,; CollectionSchema,; MilvusClient,; Connections,
     Collection,
@@ -135,7 +135,7 @@ class MilvusDB:
 
         return pk, distance
 
-    def create(self, consistency_level="Session"):
+    def create(self, consistency_level="Strong"):
 
         # connections.connect("default", host="localhost", port="19530")
 
@@ -188,7 +188,42 @@ class MilvusDB:
         self.db = Collection(self.db_name)
         self.db.load()
 
-    def create_entity_collection(self, consistency_level="Session"):
+    def create_chunk_collection(self, consistency_level="Strong"):
+
+        if self.overwrite and self.db_name in self.client.list_collections():
+            self.client.drop_collection(self.db_name)
+
+        fields = {
+            "fields": [
+                {"name": "pk", "type": DataType.INT64, "is_primary": True},
+                {
+                    "name": "vec",
+                    "type": DataType.FLOAT_VECTOR,
+                    "params": {"dim": self.embed_model.dim},
+                },
+                {"name": "chunk_id", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "entity_uids", "type": DataType.VARCHAR, "params": {"max_length": 4096}},
+            ],
+            "auto_id": False,
+        }
+
+        self.client.create_collection(
+            self.db_name,
+            fields,
+            consistency_level=consistency_level,
+        )
+
+        index = {
+            "index_type": "IVF_FLAT",
+            "metric_type": self.metric,
+            "params": {"nlist": 128},
+        }
+        self.client.create_index(self.db_name, "vec", index)
+
+        self.db = Collection(self.db_name)
+        self.db.load()
+
+    def create_entity_collection(self, consistency_level="Strong"):
 
         if self.overwrite and self.db_name in self.client.list_collections():
             self.client.drop_collection(self.db_name)
@@ -197,7 +232,9 @@ class MilvusDB:
             "fields": [
                 {"name": "uid", "type": DataType.INT64, "is_primary": True},
                 {"name": "name", "type": DataType.VARCHAR, "params": {"max_length": 255}},
-                {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
+                    {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
+                    {"name": "type", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                    {"name": "desc", "type": DataType.VARCHAR, "params": {"max_length": 2048}},
                 # {"name": "tsz", "type": DataType.TIMESTAMPTZ, nullable=True},
             ],
             "auto_id": False,
@@ -220,13 +257,48 @@ class MilvusDB:
         self.db = Collection(self.db_name)
         self.db.load()
 
-    async def insert_chunk_async(self, chunk_id: str, vector: List[float]):
+    def _has_field(self, field_name: str) -> bool:
+        if not self.db:
+            self.load()
+        try:
+            return any(getattr(field, "name", "") == field_name for field in self.db.schema.fields)
+        except Exception:
+            return False
+
+    def get_chunk_entities(self, chunk_id: str) -> List[str]:
+        if not self.db:
+            self.load()
+        if not (self._has_field("chunk_id") and self._has_field("entity_uids")):
+            return []
+        try:
+            rows = self.db.query(
+                expr=f'chunk_id == "{chunk_id}"',
+                output_fields=["entity_uids"],
+                limit=1,
+            )
+        except Exception:
+            return []
+        if not rows:
+            return []
+        value = rows[0].get("entity_uids", "")
+        if not isinstance(value, str) or not value:
+            return []
+        return [v for v in value.split(",") if v]
+
+    async def insert_chunk_async(self, chunk_id: str, vector: List[float], entity_uids: Optional[List[str]] = None):
         if not self.db:
             self.load()
         pk = abs(hash(chunk_id)) % (2**63 - 1)
-        data = [[pk], [vector]]
+        record = {"pk": pk, "vec": vector}
+        if self._has_field("chunk_id"):
+            record["chunk_id"] = chunk_id
+        if self._has_field("entity_uids"):
+            if entity_uids is None:
+                entity_uids = []
+            entity_uids_str = ",".join(str(uid) for uid in entity_uids if str(uid))
+            record["entity_uids"] = entity_uids_str
         print(f"=== inserting chunk {chunk_id} with pk {pk} into Milvus ===")
-        self.insert(data)
+        self.db.insert([record])
         print(f"=== chunk {chunk_id} inserted into Milvus with pk {pk} ===")
 
 def test_db(db_name):
@@ -261,12 +333,22 @@ def test_entity_db(db_name):
 
     db_client.show_collections_stats(db_name=db_name)
 
+def test_chunk_db(db_name):
+    vector_db = MilvusDB(db_name, overwrite=True, metric="COSINE")
+    db_client = myMilvus()
+    vector_db.create_chunk_collection()
+    print("create done!")
+
+    print(f"schema {vector_db.db.schema}")
+
+    db_client.show_collections_stats(db_name=db_name)
 
 if __name__ == "__main__":
 
     # test_db('test')
 
     db_name = "entity_index"
+    test_entity_db(db_name)
     # test_entity_db(db_name)
     # connections.connect("default", host="127.0.0.1", port="19530")
     # print(db.list_database())
@@ -282,3 +364,5 @@ if __name__ == "__main__":
     print(f"=== collection schema: {des_collection}")
 
 # python -m database.milvus
+# docker run -p 8000:3000 -e MILVUS_URL=121.48.164.166:19530 zilliz/attu:v2.3.5
+# attu addr : http://121.48.164.166:8000

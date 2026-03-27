@@ -573,6 +573,86 @@ class NebulaDB:
             result and result.is_succeeded()
         ), f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
 
+    def _format_vid(self, vid: Any) -> str:
+        vid = escape_str(str(vid))
+        if self._vid_type == "INT64":
+            assert vid.isdigit(), "Vertex id should be a digit string for INT64 space."
+            return vid
+        return f"{QUOTE}{vid}{QUOTE}"
+
+    def _filter_props(self, props: Optional[Dict[str, Any]], allowed: List[str]) -> Dict[str, Any]:
+        if not props:
+            return {}
+        return {k: v for k, v in props.items() if k in allowed and v is not None}
+
+    def upsert_vertex(self, vertex_id: Any, properties: Optional[Dict[str, Any]] = None) -> None:
+        tag = self._tags[0]
+        vid_field = self._format_vid(vertex_id)
+        # For example space: entity(name, type, source_chunks)
+        allowed = list(set((self._tag_prop_names or []) + ["name", "type", "source_chunks"]))
+        props = self._filter_props(properties, allowed)
+
+        if props:
+            prop_names = ", ".join(props.keys())
+            prop_values = []
+            for v in props.values():
+                if isinstance(v, str):
+                    prop_values.append(f"{QUOTE}{escape_str(v)}{QUOTE}")
+                else:
+                    prop_values.append(str(v))
+            value_str = ", ".join(prop_values)
+            dml_query = (
+                f"INSERT VERTEX `{tag}`({prop_names}) "
+                f"VALUES {vid_field}:({value_str});"
+            )
+        else:
+            dml_query = f"INSERT VERTEX `{tag}`() VALUES {vid_field}:();"
+
+        logger.debug(f"upsert_vertex()\nDML query: {dml_query}")
+        result = self.execute(dml_query)
+        assert result and result.is_succeeded(), f"Failed to upsert vertex: {vertex_id}"
+
+    def upsert_edge(
+        self,
+        src_id: Any,
+        tgt_id: Any,
+        relation: str,
+        properties: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        edge_type = self._edge_types[0]
+        rel_prop_name = self._rel_prop_names[0]
+        rel = escape_str(relation)
+
+        src_field = self._format_vid(src_id)
+        tgt_field = self._format_vid(tgt_id)
+        edge_field = f"{src_field}->{tgt_field}"
+
+        # For example space: relationship(relationship, source_chunk)
+        allowed = list(set(self._edge_prop_map.get(edge_type, []) + ["relationship", "source_chunk"]))
+        props = self._filter_props(properties, allowed)
+        if rel_prop_name and rel_prop_name not in props:
+            props[rel_prop_name] = rel
+
+        prop_names = ", ".join(props.keys())
+        prop_values = []
+        for v in props.values():
+            if isinstance(v, str):
+                prop_values.append(f"{QUOTE}{escape_str(v)}{QUOTE}")
+            else:
+                prop_values.append(str(v))
+        value_str = ", ".join(prop_values)
+
+        rel_hash = hash_string_to_rank(rel)
+        dml_query = (
+            f"INSERT EDGE `{edge_type}`({prop_names}) "
+            f"VALUES {edge_field}@{rel_hash}:({value_str});"
+        )
+        logger.debug(f"upsert_edge()\nDML query: {dml_query}")
+        result = self.execute(dml_query)
+        assert result and result.is_succeeded(), (
+            f"Failed to upsert edge: {src_id} {relation} {tgt_id}"
+        )
+
     def get_schema(self, refresh: bool = False) -> str:
         """Get the schema of the NebulaGraph store."""
         if self.schema and not refresh:
@@ -1140,3 +1220,7 @@ if __name__ == "__main__":
     # # drop space
     # client.drop_space('rgb')
     # client.clear('rgb')
+
+    # cd nebula-graph-studio-3.7.0
+    # 后台运行studio web服务，连接到 NebulaGraph 数据库
+    # docker compose up -d

@@ -1,0 +1,95 @@
+[
+  {
+    "query": "What is the relationship between Dr. Sam Griffith and Dr. Rob Griffith?",
+    "answer": "They have a strenuous father-daughter relationship. They also happen to work in the same hospital.",
+    "retrieval": {
+      "chunks": [
+        "chunk_523a9298f524",
+        "chunk_20e0d60558da",
+        "chunk_6d1a4296c5be"
+      ],
+      "embedding": {
+        "embedding_hits": []
+      },
+      "memory": [
+        {
+          "chunks": [
+            "chunk_523a9298f524",
+            "chunk_20e0d60558da"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5200229573555720232,
+              "name": "Dr. Sam Griffith",
+              "score": 0.8721890449523926
+            },
+            {
+              "uid": 8938217545023872475,
+              "name": "Sam Griffith",
+              "score": 0.8551797270774841
+            },
+            {
+              "uid": 6379484192792921089,
+              "name": "hospital",
+              "score": 0.8167407512664795
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_6d1a4296c5be",
+            "chunk_523a9298f524"
+          ],
+          "matched_entities": [
+            {
+              "uid": 3627085421232015802,
+              "name": "Dr. Rob Griffith",
+              "score": 0.8601188659667969
+            },
+            {
+              "uid": 6584212265433549629,
+              "name": "Jason Isaacs",
+              "score": 0.8578968048095703
+            },
+            {
+              "uid": 5200229573555720232,
+              "name": "Dr. Sam Griffith",
+              "score": 0.8164117336273193
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_523a9298f524"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5200229573555720232,
+              "name": "Dr. Sam Griffith",
+              "score": 0.8721890449523926
+            },
+            {
+              "uid": 6379484192792921089,
+              "name": "hospital",
+              "score": 0.8167407512664795
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_523a9298f524"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5200229573555720232,
+              "name": "Dr. Sam Griffith",
+              "score": 0.8164117336273193
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

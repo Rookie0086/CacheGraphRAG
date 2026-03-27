@@ -95,3 +95,26 @@ prompt_extract_triplest_str = """
 
     Extract the entities and relations following the schema.  
 """
+
+prompt_extract_entities_str = """
+    You are an expert Knowledge Graph Engineer. Your task is to extract all entities from the provided text .
+
+    ### Guidelines:
+     **Entities **: Identify key entities.
+    - `id`: A concise, unique name (e.g., "Elon Musk" not "he").
+    - `desc`: A brief keyword-rich summary (max 20 words) for context (e.g., "CEO of Tesla and SpaceX"), if the context is inadequate, use "UNKNOWN".
+
+    ### Constraints:
+    - **Output Format**: Return strictly valid JSON.
+
+    ### Schema:
+    {{
+    "entities": [
+        {{"id": "string", "type": "string", "desc": "string"}}
+    ]
+    }}
+    Text :
+    {context}
+
+    Extract the entities following the schema.  
+"""
