@@ -1,0 +1,1657 @@
+[
+  {
+    "query": "When is the premiere of 'Carole King & James Taylor: Just Call Out My Name'?",
+    "answer": [
+      [
+        "January 2 2022",
+        "Jan 2, 2022",
+        "Jan. 2, 2022",
+        "January 2, 2022",
+        "2 January 2022",
+        "2 Jan, 2022",
+        "2 Jan., 2022",
+        "2 January, 2022"
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_0d974dea6630",
+        "chunk_b6bc9a16d835",
+        "chunk_42ad2df84926",
+        ""
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_0d974dea6630",
+            "chunk_b6bc9a16d835",
+            "chunk_42ad2df84926"
+          ],
+          "matched_entities": [
+            {
+              "uid": 6732003864979168701,
+              "name": "Carole King & James Taylor",
+              "score": 0.8880805969238281
+            },
+            {
+              "uid": 2933877746271569182,
+              "name": "James Taylor",
+              "score": 0.7846166491508484
+            },
+            {
+              "uid": 821660136876171627,
+              "name": "Kate Markowitz",
+              "score": 0.7813240885734558
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_0d974dea6630",
+            "chunk_b6bc9a16d835",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 2933877746271569182,
+              "name": "James Taylor",
+              "score": 0.8997133374214172
+            },
+            {
+              "uid": 6732003864979168701,
+              "name": "Carole King & James Taylor",
+              "score": 0.8547549843788147
+            },
+            {
+              "uid": 6014040519442363966,
+              "name": "Sweet Baby James",
+              "score": 0.7939954400062561
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_b6bc9a16d835",
+            "chunk_0d974dea6630",
+            "chunk_42ad2df84926"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4550706346183927408,
+              "name": "CAROLE KING & JAMES TAYLOR: JUST CALL OUT MY NAME",
+              "score": 0.9590877294540405
+            },
+            {
+              "uid": 6732003864979168701,
+              "name": "Carole King & James Taylor",
+              "score": 0.9036500453948975
+            },
+            {
+              "uid": 8469528523099067242,
+              "name": "Just Call Out My Name",
+              "score": 0.8218022584915161
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "The genre of the drama \"Good Sam\" is what?",
+    "answer": [
+      "medical"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_832fa63e4099",
+        "",
+        "chunk_fb1aea02f014"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_832fa63e4099",
+            "",
+            "chunk_fb1aea02f014"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4848787529650805187,
+              "name": "Good Sam",
+              "score": 0.9099717736244202
+            },
+            {
+              "uid": 6836306719156029038,
+              "name": "Good Sam",
+              "score": 0.8961929678916931
+            },
+            {
+              "uid": 4612505767612980187,
+              "name": "CBS",
+              "score": 0.8720837235450745
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who won the 2022 Citrus Bowl?",
+    "answer": [
+      "Kentucky Wildcats"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_0d8cda77d097",
+        "chunk_bad7895dfdfa",
+        ""
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_0d8cda77d097",
+            "chunk_bad7895dfdfa",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 6516324069256502967,
+              "name": "2022 Citrus Bowl",
+              "score": 0.975343644618988
+            },
+            {
+              "uid": 4997613502209219145,
+              "name": "2021 FBS football season",
+              "score": 0.8594070672988892
+            },
+            {
+              "uid": 3008631496538327530,
+              "name": "Kentucky Wildcats",
+              "score": 0.8007931709289551
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "What position did Jason Semore hold at Valdosta State before returning to Georgia Tech?",
+    "answer": [
+      "defensive coordinator"
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_72dfab657740",
+        "chunk_7f9f60df4d6b",
+        "chunk_9cbb59400d83",
+        "chunk_076b2544e7e9"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_72dfab657740",
+            "chunk_7f9f60df4d6b"
+          ],
+          "matched_entities": [
+            {
+              "uid": 7471332056204251957,
+              "name": "Semore",
+              "score": 0.8956358432769775
+            },
+            {
+              "uid": 763309451252259357,
+              "name": "Semore",
+              "score": 0.8470268249511719
+            },
+            {
+              "uid": 9104949064990698740,
+              "name": "Georgia Tech",
+              "score": 0.8163948059082031
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_9cbb59400d83",
+            "chunk_7f9f60df4d6b"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4094829020444556912,
+              "name": "Valdosta State",
+              "score": 0.848149836063385
+            },
+            {
+              "uid": 5870132405574028705,
+              "name": "Oklahoma State",
+              "score": 0.7997922897338867
+            },
+            {
+              "uid": 2095474358640232257,
+              "name": "Tech",
+              "score": 0.798048734664917
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_076b2544e7e9",
+            "",
+            "chunk_9cbb59400d83"
+          ],
+          "matched_entities": [
+            {
+              "uid": 9104949064990698740,
+              "name": "Georgia Tech",
+              "score": 0.8906031250953674
+            },
+            {
+              "uid": 7471332056204251957,
+              "name": "Semore",
+              "score": 0.8740441799163818
+            },
+            {
+              "uid": 2095474358640232257,
+              "name": "Tech",
+              "score": 0.8511369824409485
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "How many vehicles did Tesla deliver in 2021?",
+    "answer": [
+      [
+        "936,172",
+        "936172"
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_402a8b351f6e",
+        "chunk_2a11ebb49fc7",
+        "",
+        "chunk_1616c376cb0a"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_402a8b351f6e",
+            "chunk_2a11ebb49fc7",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 483930274895734124,
+              "name": "Tesla",
+              "score": 0.9325537085533142
+            },
+            {
+              "uid": 2642319390717469686,
+              "name": "Model Y",
+              "score": 0.8327096700668335
+            },
+            {
+              "uid": 5601968178864480563,
+              "name": "United States",
+              "score": 0.8079027533531189
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_1616c376cb0a",
+            "chunk_2a11ebb49fc7"
+          ],
+          "matched_entities": [
+            {
+              "uid": 3507475813159402504,
+              "name": "2021",
+              "score": 0.8611248731613159
+            },
+            {
+              "uid": 2135371793538706031,
+              "name": "December 13 2021",
+              "score": 0.8239343762397766
+            },
+            {
+              "uid": 588544132696785691,
+              "name": "Q4 2021",
+              "score": 0.8129551410675049
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 5601968178864480563,
+              "name": "United States",
+              "score": 0.8079027533531189
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 3507475813159402504,
+              "name": "2021",
+              "score": 0.8611248731613159
+            },
+            {
+              "uid": 2135371793538706031,
+              "name": "December 13 2021",
+              "score": 0.8239343762397766
+            },
+            {
+              "uid": 588544132696785691,
+              "name": "Q4 2021",
+              "score": 0.8129551410675049
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Which company acquired ShowBiz Cinemas?",
+    "answer": [
+      "EVO Entertainment Group"
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_5f880f12bcca",
+        "chunk_2f171b794106"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_5f880f12bcca",
+            "chunk_2f171b794106"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1548139665126256756,
+              "name": "ShowBiz Cinemas",
+              "score": 0.9070696830749512
+            },
+            {
+              "uid": 7059714277738479755,
+              "name": "ShowBiz Cinemas of Dallas",
+              "score": 0.8994309306144714
+            },
+            {
+              "uid": 475512594133058260,
+              "name": "ShowBiz Cinemas",
+              "score": 0.8900882005691528
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 1548139665126256756,
+              "name": "ShowBiz Cinemas",
+              "score": 0.9070696830749512
+            },
+            {
+              "uid": 7059714277738479755,
+              "name": "ShowBiz Cinemas of Dallas",
+              "score": 0.8994309306144714
+            },
+            {
+              "uid": 475512594133058260,
+              "name": "ShowBiz Cinemas",
+              "score": 0.8900882005691528
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Where is the Super Bowl held in 2022?",
+    "answer": [
+      "SoFi Stadium"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_7fc3d2d3f0ad",
+        "",
+        "chunk_f18eadb802ae",
+        "chunk_2a11ebb49fc7",
+        "chunk_e690dbc91224"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_7fc3d2d3f0ad",
+            "",
+            "chunk_f18eadb802ae"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2496393976332462595,
+              "name": "Super Bowl",
+              "score": 0.9894605278968811
+            },
+            {
+              "uid": 8971393470918542227,
+              "name": "Super Bowl LVI",
+              "score": 0.8986780643463135
+            },
+            {
+              "uid": 3819373553667653081,
+              "name": "Super Bowl XXIII",
+              "score": 0.8692586421966553
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_2a11ebb49fc7",
+            "chunk_e690dbc91224"
+          ],
+          "matched_entities": [
+            {
+              "uid": 3507475813159402504,
+              "name": "2021",
+              "score": 0.8201321363449097
+            },
+            {
+              "uid": 5790025561777069484,
+              "name": "2022",
+              "score": 0.8148564100265503
+            },
+            {
+              "uid": 3752420511374352023,
+              "name": "spring 2024",
+              "score": 0.8140019178390503
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2496393976332462595,
+              "name": "Super Bowl",
+              "score": 0.9894605278968811
+            },
+            {
+              "uid": 8971393470918542227,
+              "name": "Super Bowl LVI",
+              "score": 0.8986780643463135
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 3507475813159402504,
+              "name": "2021",
+              "score": 0.8201321363449097
+            },
+            {
+              "uid": 5790025561777069484,
+              "name": "2022",
+              "score": 0.8148564100265503
+            },
+            {
+              "uid": 3752420511374352023,
+              "name": "spring 2024",
+              "score": 0.8140019178390503
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "When will Truth Social launch on iOS?",
+    "answer": [
+      [
+        "February 21",
+        "Feb 21",
+        "Feb. 21",
+        "21 February",
+        "21 Feb",
+        "21 Feb."
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_6a7e424507f7",
+        "chunk_ac1a942a1bc4",
+        "chunk_d7fd6a5c2202",
+        "chunk_3bdacf6ec38c",
+        "",
+        "chunk_006b3ebcfb10"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6a7e424507f7",
+            "chunk_ac1a942a1bc4",
+            "chunk_d7fd6a5c2202"
+          ],
+          "matched_entities": [
+            {
+              "uid": 3416575504785865779,
+              "name": "Truth Social",
+              "score": 0.9068345427513123
+            },
+            {
+              "uid": 901248811114925,
+              "name": "Truth Social website",
+              "score": 0.8989256620407104
+            },
+            {
+              "uid": 5913282923228633145,
+              "name": "truthsocial.com",
+              "score": 0.8746548891067505
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_3bdacf6ec38c",
+            "",
+            "chunk_006b3ebcfb10"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1327069584073185491,
+              "name": "Apple iOS",
+              "score": 0.9711319804191589
+            },
+            {
+              "uid": 5549074538555236350,
+              "name": "App Store",
+              "score": 0.8318873643875122
+            },
+            {
+              "uid": 1381699976406233122,
+              "name": "Android operating system",
+              "score": 0.8037159442901611
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 3416575504785865779,
+              "name": "Truth Social",
+              "score": 0.9068345427513123
+            },
+            {
+              "uid": 901248811114925,
+              "name": "Truth Social website",
+              "score": 0.8989256620407104
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "What won best drama at 79th Golden Globes?",
+    "answer": [
+      "The Power of the Dog"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_b315626d4122",
+        "chunk_3ec276ebde62",
+        "chunk_ba1b9054590f"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_b315626d4122",
+            "chunk_3ec276ebde62",
+            "chunk_ba1b9054590f"
+          ],
+          "matched_entities": [
+            {
+              "uid": 6499618313127028813,
+              "name": "Golden Globes",
+              "score": 0.9180421233177185
+            },
+            {
+              "uid": 9087041391819712121,
+              "name": "Golden Globe Awards",
+              "score": 0.9045010209083557
+            },
+            {
+              "uid": 2083708041219565384,
+              "name": "79th Golden Globe Awards",
+              "score": 0.8869516849517822
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_b315626d4122",
+            "chunk_3ec276ebde62",
+            "chunk_ba1b9054590f"
+          ],
+          "matched_entities": [
+            {
+              "uid": 6499618313127028813,
+              "name": "Golden Globes",
+              "score": 0.8412506580352783
+            },
+            {
+              "uid": 9087041391819712121,
+              "name": "Golden Globe Awards",
+              "score": 0.8361546993255615
+            },
+            {
+              "uid": 2170701357213702838,
+              "name": "Succession",
+              "score": 0.8226711750030518
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 9087041391819712121,
+              "name": "Golden Globe Awards",
+              "score": 0.9045010209083557
+            },
+            {
+              "uid": 2083708041219565384,
+              "name": "79th Golden Globe Awards",
+              "score": 0.8869516849517822
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 9087041391819712121,
+              "name": "Golden Globe Awards",
+              "score": 0.8361546993255615
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "How much are GA Tech softball 2022 season tickets?",
+    "answer": [
+      "$100 per seat"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_d5acf0596eb9",
+        "chunk_4c6c2cdb7fc8",
+        "chunk_9fc41f6fd105",
+        "chunk_7deb5153d26e",
+        "chunk_1706ffabcc63",
+        "chunk_1eb45b6ed8c2"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_d5acf0596eb9",
+            "chunk_4c6c2cdb7fc8",
+            "chunk_9fc41f6fd105"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2423804075725442387,
+              "name": "Georgia Tech",
+              "score": 0.8876446485519409
+            },
+            {
+              "uid": 6662158648215439827,
+              "name": "Georgia Tech",
+              "score": 0.8575345873832703
+            },
+            {
+              "uid": 1284815885295834701,
+              "name": "Georgia Tech",
+              "score": 0.849934458732605
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_7deb5153d26e",
+            "chunk_1706ffabcc63",
+            "chunk_1eb45b6ed8c2"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2041886539688902423,
+              "name": "Georgia Tech Softball",
+              "score": 0.9339423179626465
+            },
+            {
+              "uid": 6662158648215439827,
+              "name": "Georgia Tech",
+              "score": 0.8335285186767578
+            },
+            {
+              "uid": 2343049424565639645,
+              "name": "Single-Game Tickets",
+              "score": 0.8300580978393555
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_7deb5153d26e",
+            "chunk_1eb45b6ed8c2",
+            "chunk_1706ffabcc63"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2343049424565639645,
+              "name": "Single-Game Tickets",
+              "score": 0.8439449667930603
+            },
+            {
+              "uid": 2041886539688902423,
+              "name": "Georgia Tech Softball",
+              "score": 0.7798184156417847
+            },
+            {
+              "uid": 4853946541359960,
+              "name": "fall 2023",
+              "score": 0.7686972618103027
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2423804075725442387,
+              "name": "Georgia Tech",
+              "score": 0.8876446485519409
+            },
+            {
+              "uid": 6662158648215439827,
+              "name": "Georgia Tech",
+              "score": 0.8575345873832703
+            },
+            {
+              "uid": 1284815885295834701,
+              "name": "Georgia Tech",
+              "score": 0.849934458732605
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2041886539688902423,
+              "name": "Georgia Tech Softball",
+              "score": 0.9339423179626465
+            },
+            {
+              "uid": 6662158648215439827,
+              "name": "Georgia Tech",
+              "score": 0.8335285186767578
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2041886539688902423,
+              "name": "Georgia Tech Softball",
+              "score": 0.7798184156417847
+            },
+            {
+              "uid": 4853946541359960,
+              "name": "fall 2023",
+              "score": 0.7686972618103027
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "When does the 2022 Olympic Winter Games end?",
+    "answer": [
+      [
+        "February 20",
+        "Feb 20",
+        "Feb. 20",
+        "20 February",
+        "20 Feb",
+        "20 Feb."
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_6ea521ce622b",
+        "chunk_fedde326fb74",
+        ""
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ea521ce622b",
+            "chunk_fedde326fb74",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 3298171423339504352,
+              "name": "2022 Winter Olympics",
+              "score": 0.9212742447853088
+            },
+            {
+              "uid": 8297542507015274304,
+              "name": "2022 Winter Paralympics",
+              "score": 0.8922102451324463
+            },
+            {
+              "uid": 2302129974434246079,
+              "name": "Men's ice hockey tournament",
+              "score": 0.8862823247909546
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 3298171423339504352,
+              "name": "2022 Winter Olympics",
+              "score": 0.9212742447853088
+            },
+            {
+              "uid": 8297542507015274304,
+              "name": "2022 Winter Paralympics",
+              "score": 0.8922102451324463
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who won the Spanish Super Cup 2022?",
+    "answer": [
+      "Real Madrid"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_6b47ffdf07cd",
+        "chunk_09da5a1fdf6c",
+        "chunk_27faf04ebea2"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6b47ffdf07cd",
+            "chunk_09da5a1fdf6c",
+            "chunk_27faf04ebea2"
+          ],
+          "matched_entities": [
+            {
+              "uid": 6634146660194108230,
+              "name": "Spanish Super Cup",
+              "score": 0.9382920265197754
+            },
+            {
+              "uid": 2387094364199361558,
+              "name": "El Clasico 2023",
+              "score": 0.8559145927429199
+            },
+            {
+              "uid": 6401018908637732957,
+              "name": "La Liga",
+              "score": 0.8340797424316406
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "How much is Microsoft acquiring Activision Blizzard for?",
+    "answer": [
+      [
+        "$68.7 billion",
+        "$68.7bn"
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_575ba29c3702",
+        "",
+        "chunk_8c846307f816",
+        "chunk_e38e04187a92"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_575ba29c3702",
+            "",
+            "chunk_8c846307f816"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4368606100374285271,
+              "name": "Acquisition Deal",
+              "score": 0.8913266658782959
+            },
+            {
+              "uid": 3039094276260681373,
+              "name": "Microsoft Corp.",
+              "score": 0.8732364773750305
+            },
+            {
+              "uid": 5437582756132469834,
+              "name": "January 18 2022",
+              "score": 0.8447028994560242
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_8c846307f816",
+            "chunk_e38e04187a92",
+            "chunk_575ba29c3702"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4368606100374285271,
+              "name": "Acquisition Deal",
+              "score": 0.8936870098114014
+            },
+            {
+              "uid": 2911535830001509232,
+              "name": "Activision Blizzard Inc.",
+              "score": 0.8865395784378052
+            },
+            {
+              "uid": 7895660326180977531,
+              "name": "Major League Gaming",
+              "score": 0.8541605472564697
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 3039094276260681373,
+              "name": "Microsoft Corp.",
+              "score": 0.8732364773750305
+            },
+            {
+              "uid": 5437582756132469834,
+              "name": "January 18 2022",
+              "score": 0.8447028994560242
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "What is the price for a 30-second spot during the Super Bowl 2022?",
+    "answer": [
+      "$6.5 million"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_7fc3d2d3f0ad",
+        "chunk_4cbbd17f1ea4",
+        "",
+        "chunk_f18eadb802ae"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_7fc3d2d3f0ad",
+            "chunk_4cbbd17f1ea4",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 1329694817715269907,
+              "name": "Super Bowl Commercial",
+              "score": 0.8179774284362793
+            },
+            {
+              "uid": 8582001430376661078,
+              "name": "Super_Bowl_2022",
+              "score": 0.7498146295547485
+            },
+            {
+              "uid": 4118785484810606664,
+              "name": "Ad Price NBC 1967",
+              "score": 0.7240121960639954
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_f18eadb802ae",
+            "",
+            "chunk_7fc3d2d3f0ad"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2496393976332462595,
+              "name": "Super Bowl",
+              "score": 0.921793520450592
+            },
+            {
+              "uid": 8971393470918542227,
+              "name": "Super Bowl LVI",
+              "score": 0.9209941625595093
+            },
+            {
+              "uid": 8582001430376661078,
+              "name": "Super_Bowl_2022",
+              "score": 0.8712052702903748
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 1329694817715269907,
+              "name": "Super Bowl Commercial",
+              "score": 0.8179774284362793
+            },
+            {
+              "uid": 8582001430376661078,
+              "name": "Super_Bowl_2022",
+              "score": 0.7498146295547485
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2496393976332462595,
+              "name": "Super Bowl",
+              "score": 0.921793520450592
+            },
+            {
+              "uid": 8971393470918542227,
+              "name": "Super Bowl LVI",
+              "score": 0.9209941625595093
+            },
+            {
+              "uid": 8582001430376661078,
+              "name": "Super_Bowl_2022",
+              "score": 0.8712052702903748
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "When is the Sports Star of the Year Awards Show 2022?",
+    "answer": [
+      [
+        "May 26",
+        "May 26",
+        "May. 26",
+        "26 May",
+        "26 May",
+        "26 May."
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_9c7438c3473f",
+        "chunk_c9786b80fb2c",
+        "chunk_e04cc53f15c7"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_9c7438c3473f",
+            "chunk_c9786b80fb2c",
+            "chunk_e04cc53f15c7"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5360173778782260377,
+              "name": "87th Seattle Sports Star of the Year Awards Show",
+              "score": 0.8687556982040405
+            },
+            {
+              "uid": 927635938797212388,
+              "name": "May 26 2022",
+              "score": 0.8624382019042969
+            },
+            {
+              "uid": 8953996907781249485,
+              "name": "May 26 2022",
+              "score": 0.77234947681427
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 927635938797212388,
+              "name": "May 26 2022",
+              "score": 0.8624382019042969
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who are the recipients of the 2022 Ivan Allen Jr. Prize for Social Courage?",
+    "answer": [
+      "Lawrence Williams",
+      "Ralph Long Jr.",
+      "Ford Greene",
+      "Ronald Yancey"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_4c6c2cdb7fc8",
+        "chunk_4504d1ed8731",
+        "chunk_d5acf0596eb9"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_4c6c2cdb7fc8",
+            "chunk_4504d1ed8731",
+            "chunk_d5acf0596eb9"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1946461787406164360,
+              "name": "Ivan Allen Jr. Prize for Social Courage",
+              "score": 0.9306961297988892
+            },
+            {
+              "uid": 2034953656651398278,
+              "name": "Lawrence Williams",
+              "score": 0.8424453139305115
+            },
+            {
+              "uid": 8953996907781249485,
+              "name": "May 26 2022",
+              "score": 0.7921750545501709
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2034953656651398278,
+              "name": "Lawrence Williams",
+              "score": 0.8424453139305115
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What is the codename for Google's AR headset project?",
+    "answer": [
+      "Project Iris"
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_17d08b777b14",
+        "chunk_4c5794974c28"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_17d08b777b14",
+            "chunk_4c5794974c28"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2416113719856106944,
+              "name": "Google",
+              "score": 0.8816344738006592
+            },
+            {
+              "uid": 2596650421455256228,
+              "name": "Google Labs",
+              "score": 0.8221688270568848
+            },
+            {
+              "uid": 4111332197606442409,
+              "name": "Meta",
+              "score": 0.8066134452819824
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_17d08b777b14",
+            "chunk_4c5794974c28"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2422104999419985720,
+              "name": "DayDream VR",
+              "score": 0.8781883120536804
+            },
+            {
+              "uid": 4108940534408948806,
+              "name": "AR_translation_glasses",
+              "score": 0.8514330387115479
+            },
+            {
+              "uid": 2416113719856106944,
+              "name": "Google",
+              "score": 0.8455042839050293
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2416113719856106944,
+              "name": "Google",
+              "score": 0.8816344738006592
+            },
+            {
+              "uid": 2596650421455256228,
+              "name": "Google Labs",
+              "score": 0.8221688270568848
+            },
+            {
+              "uid": 4111332197606442409,
+              "name": "Meta",
+              "score": 0.8066134452819824
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 2416113719856106944,
+              "name": "Google",
+              "score": 0.8455042839050293
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What is the name of Meta's AI supercomputer?",
+    "answer": [
+      [
+        "RSC",
+        "the AI Research SuperCluster"
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_8a452947ef2f",
+        "chunk_6386a4bd2890",
+        "chunk_86d920bd6466",
+        "chunk_89d1af6b327b"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_8a452947ef2f",
+            "chunk_6386a4bd2890"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4111332197606442409,
+              "name": "Meta",
+              "score": 0.9792847633361816
+            },
+            {
+              "uid": 821484360983274317,
+              "name": "Facebook",
+              "score": 0.9189320802688599
+            },
+            {
+              "uid": 6844905009066775847,
+              "name": "Mark Zuckerberg",
+              "score": 0.8535724878311157
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_86d920bd6466",
+            "chunk_89d1af6b327b"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1654870171388808554,
+              "name": "Supercomputer",
+              "score": 0.9126889109611511
+            },
+            {
+              "uid": 2568657520404893515,
+              "name": "Next-Generation AI Infrastructure",
+              "score": 0.8763862252235413
+            },
+            {
+              "uid": 8156171912545706471,
+              "name": "AI Research SuperCluster",
+              "score": 0.8674535155296326
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 4111332197606442409,
+              "name": "Meta",
+              "score": 0.9792847633361816
+            },
+            {
+              "uid": 821484360983274317,
+              "name": "Facebook",
+              "score": 0.9189320802688599
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 1654870171388808554,
+              "name": "Supercomputer",
+              "score": 0.9126889109611511
+            },
+            {
+              "uid": 2568657520404893515,
+              "name": "Next-Generation AI Infrastructure",
+              "score": 0.8763862252235413
+            },
+            {
+              "uid": 8156171912545706471,
+              "name": "AI Research SuperCluster",
+              "score": 0.8674535155296326
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "When will American students start taking digital SAT exams?",
+    "answer": [
+      "2024"
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_3782f05d2ef5",
+        "chunk_54df7eb93b97",
+        "chunk_292d69dddb59",
+        "chunk_0cb122e98c88"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_3782f05d2ef5",
+            "chunk_54df7eb93b97"
+          ],
+          "matched_entities": [
+            {
+              "uid": 7426807327257338290,
+              "name": "US and international students",
+              "score": 0.8884764909744263
+            },
+            {
+              "uid": 4182673752505853923,
+              "name": "Low-income and rural students",
+              "score": 0.8166887164115906
+            },
+            {
+              "uid": 5607046793870389995,
+              "name": "class of 2024",
+              "score": 0.7959008812904358
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_292d69dddb59",
+            "chunk_0cb122e98c88"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5211016541382014670,
+              "name": "SAT",
+              "score": 0.8927817344665527
+            },
+            {
+              "uid": 1212486485660243500,
+              "name": "at-home digital test",
+              "score": 0.8924046158790588
+            },
+            {
+              "uid": 664279004815892299,
+              "name": "Digital SAT",
+              "score": 0.8652834892272949
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 5211016541382014670,
+              "name": "SAT",
+              "score": 0.8927817344665527
+            },
+            {
+              "uid": 664279004815892299,
+              "name": "Digital SAT",
+              "score": 0.8652834892272949
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "When do the Paralympic Winter Games 2022 start?",
+    "answer": [
+      [
+        "March 4",
+        "Mar 4",
+        "Mar. 4",
+        "4 March",
+        "4 Mar",
+        "4 Mar."
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_2514ada4aa46",
+        "chunk_51827577b416",
+        "chunk_db6a6211cb25"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_2514ada4aa46",
+            "chunk_51827577b416",
+            "chunk_db6a6211cb25"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8297542507015274304,
+              "name": "2022 Winter Paralympics",
+              "score": 0.9725625514984131
+            },
+            {
+              "uid": 6257168318480435108,
+              "name": "2022 Paralympic Winter Games",
+              "score": 0.9488641619682312
+            },
+            {
+              "uid": 7475036832285992195,
+              "name": "Paralympic Games",
+              "score": 0.9013102054595947
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 8297542507015274304,
+              "name": "2022 Winter Paralympics",
+              "score": 0.9725625514984131
+            },
+            {
+              "uid": 6257168318480435108,
+              "name": "2022 Paralympic Winter Games",
+              "score": 0.9488641619682312
+            },
+            {
+              "uid": 7475036832285992195,
+              "name": "Paralympic Games",
+              "score": 0.9013102054595947
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

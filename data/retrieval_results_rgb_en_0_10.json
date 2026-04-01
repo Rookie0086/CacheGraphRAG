@@ -1,0 +1,773 @@
+[
+  {
+    "query": "When is the premiere of 'Carole King & James Taylor: Just Call Out My Name'?",
+    "answer": [
+      [
+        "January 2 2022",
+        "Jan 2, 2022",
+        "Jan. 2, 2022",
+        "January 2, 2022",
+        "2 January 2022",
+        "2 Jan, 2022",
+        "2 Jan., 2022",
+        "2 January, 2022"
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_1702e31c5934",
+        "chunk_c3f90b55f68d",
+        "chunk_2f6982351aa3",
+        "chunk_71d3bb8acc3b"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_1702e31c5934",
+            "chunk_c3f90b55f68d",
+            "chunk_2f6982351aa3"
+          ],
+          "matched_entities": [
+            {
+              "uid": 469163330823884092,
+              "name": "Carole King & James Taylor",
+              "score": 0.8752691149711609
+            },
+            {
+              "uid": 8582642933028206641,
+              "name": "Kate Markowitz",
+              "score": 0.8062810301780701
+            },
+            {
+              "uid": 6043385216039191412,
+              "name": "James Taylor",
+              "score": 0.80040043592453
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_c3f90b55f68d",
+            "chunk_1702e31c5934",
+            "chunk_71d3bb8acc3b"
+          ],
+          "matched_entities": [
+            {
+              "uid": 6043385216039191412,
+              "name": "James Taylor",
+              "score": 0.9360156059265137
+            },
+            {
+              "uid": 469163330823884092,
+              "name": "Carole King & James Taylor",
+              "score": 0.8364904522895813
+            },
+            {
+              "uid": 7875871050325854893,
+              "name": "Lin-Manuel Miranda",
+              "score": 0.7738706469535828
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_c3f90b55f68d",
+            "chunk_1702e31c5934",
+            "chunk_2f6982351aa3"
+          ],
+          "matched_entities": [
+            {
+              "uid": 9222523909600376554,
+              "name": "CAROLE KING & JAMES TAYLOR: JUST CALL OUT MY NAME",
+              "score": 0.9651910662651062
+            },
+            {
+              "uid": 469163330823884092,
+              "name": "Carole King & James Taylor",
+              "score": 0.8862800002098083
+            },
+            {
+              "uid": 6877347513203146988,
+              "name": "Just Call Out My Name",
+              "score": 0.8306068778038025
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "The genre of the drama \"Good Sam\" is what?",
+    "answer": [
+      "medical"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_c70c5ec9b71a",
+        "chunk_4ceb56a7840d",
+        "chunk_6767557bdc83"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_c70c5ec9b71a",
+            "chunk_4ceb56a7840d",
+            "chunk_6767557bdc83"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8475862820281550846,
+              "name": "Good Sam",
+              "score": 0.9233381748199463
+            },
+            {
+              "uid": 4268644301232798882,
+              "name": "Good Sam",
+              "score": 0.8829205632209778
+            },
+            {
+              "uid": 7186068940242279059,
+              "name": "family drama twist",
+              "score": 0.8556886911392212
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who won the 2022 Citrus Bowl?",
+    "answer": [
+      "Kentucky Wildcats"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_118aa4a3d595",
+        "chunk_abddb937be8f",
+        "chunk_f3269d897ff1"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_118aa4a3d595",
+            "chunk_abddb937be8f",
+            "chunk_f3269d897ff1"
+          ],
+          "matched_entities": [
+            {
+              "uid": 7901995187541412732,
+              "name": "2022 Citrus Bowl",
+              "score": 0.975343644618988
+            },
+            {
+              "uid": 6260930904429344449,
+              "name": "2021 FBS football season",
+              "score": 0.8400680422782898
+            },
+            {
+              "uid": 4012110394731977451,
+              "name": "Super Bowl LVI",
+              "score": 0.7897151708602905
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "What position did Jason Semore hold at Valdosta State before returning to Georgia Tech?",
+    "answer": [
+      "defensive coordinator"
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_878cb31e9b70",
+        "chunk_d2421ee620f5",
+        "chunk_ed5b3094edc5",
+        "chunk_8582b4eeee24",
+        "chunk_da01d8d7f053",
+        "chunk_ea0bd047959b"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_878cb31e9b70",
+            "chunk_d2421ee620f5"
+          ],
+          "matched_entities": [
+            {
+              "uid": 3793141298836481407,
+              "name": "Semore",
+              "score": 0.8589254021644592
+            },
+            {
+              "uid": 8151255230470496183,
+              "name": "Valdosta State",
+              "score": 0.8537231087684631
+            },
+            {
+              "uid": 7779880273628831256,
+              "name": "Jason",
+              "score": 0.8484266996383667
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_ed5b3094edc5",
+            "chunk_8582b4eeee24",
+            "chunk_da01d8d7f053"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8151255230470496183,
+              "name": "Valdosta State",
+              "score": 0.9358164072036743
+            },
+            {
+              "uid": 3456657773457379757,
+              "name": "Valdosta State",
+              "score": 0.8420145511627197
+            },
+            {
+              "uid": 2363542664521864346,
+              "name": "Valdosta State",
+              "score": 0.8322678804397583
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_8582b4eeee24",
+            "chunk_ea0bd047959b"
+          ],
+          "matched_entities": [
+            {
+              "uid": 9158394310513405887,
+              "name": "Georgia Tech",
+              "score": 0.9005099534988403
+            },
+            {
+              "uid": 1373374938068713992,
+              "name": "Tech",
+              "score": 0.8437374830245972
+            },
+            {
+              "uid": 3401806033976258264,
+              "name": "Georgia Tech",
+              "score": 0.833905816078186
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "How many vehicles did Tesla deliver in 2021?",
+    "answer": [
+      [
+        "936,172",
+        "936172"
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_4611f6a60999",
+        "chunk_723400c6d8a4",
+        "chunk_75685a9a91c6",
+        "",
+        "chunk_89264d31e0c2"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_4611f6a60999",
+            "chunk_723400c6d8a4",
+            "chunk_75685a9a91c6"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2453007985004580932,
+              "name": "Tesla",
+              "score": 0.9325537085533142
+            },
+            {
+              "uid": 4779525850799612048,
+              "name": "Model S",
+              "score": 0.8397242426872253
+            },
+            {
+              "uid": 932369634865671854,
+              "name": "Model Y",
+              "score": 0.812725305557251
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "",
+            "chunk_4611f6a60999",
+            "chunk_89264d31e0c2"
+          ],
+          "matched_entities": [
+            {
+              "uid": 9108425382703098918,
+              "name": "2021",
+              "score": 0.9292377233505249
+            },
+            {
+              "uid": 6524482729591443443,
+              "name": "936172_vehicles",
+              "score": 0.8044395446777344
+            },
+            {
+              "uid": 7107280952797781985,
+              "name": "Jan 3, 2022",
+              "score": 0.7855048775672913
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "Which company acquired ShowBiz Cinemas?",
+    "answer": [
+      "EVO Entertainment Group"
+    ],
+    "retrieval": {
+      "chunks": [
+        "",
+        "chunk_f33bb9d00268",
+        "chunk_fb4f3e4a14a8"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "",
+            "chunk_f33bb9d00268",
+            "chunk_fb4f3e4a14a8"
+          ],
+          "matched_entities": [
+            {
+              "uid": 209842751851197731,
+              "name": "ShowBiz Cinemas",
+              "score": 0.9070696830749512
+            },
+            {
+              "uid": 2480571449131193579,
+              "name": "ShowBiz Cinemas",
+              "score": 0.9007423520088196
+            },
+            {
+              "uid": 5789711388563247421,
+              "name": "Showbiz Cinemas",
+              "score": 0.8759711384773254
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "Where is the Super Bowl held in 2022?",
+    "answer": [
+      "SoFi Stadium"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_f3269d897ff1",
+        "chunk_46d0288cde96",
+        ""
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_f3269d897ff1",
+            "chunk_46d0288cde96"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4012110394731977451,
+              "name": "Super Bowl LVI",
+              "score": 0.9133076667785645
+            },
+            {
+              "uid": 4643414228103795150,
+              "name": "Super Bowl XXIII",
+              "score": 0.8752521872520447
+            },
+            {
+              "uid": 8398960318570042059,
+              "name": "1999 Super Bowl XXXIV",
+              "score": 0.8524535298347473
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_f3269d897ff1",
+            "chunk_46d0288cde96",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 4012110394731977451,
+              "name": "Super Bowl LVI",
+              "score": 0.8687971830368042
+            },
+            {
+              "uid": 6260930904429344449,
+              "name": "2021 FBS football season",
+              "score": 0.8199074864387512
+            },
+            {
+              "uid": 4643414228103795150,
+              "name": "Super Bowl XXIII",
+              "score": 0.8184647560119629
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "When will Truth Social launch on iOS?",
+    "answer": [
+      [
+        "February 21",
+        "Feb 21",
+        "Feb. 21",
+        "21 February",
+        "21 Feb",
+        "21 Feb."
+      ]
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_52408ea57499",
+        "chunk_9d7c0819391c",
+        "chunk_c19106135f50",
+        "chunk_710063b999dd"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_52408ea57499",
+            "chunk_9d7c0819391c",
+            "chunk_c19106135f50"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4978019565169164087,
+              "name": "Truth Social",
+              "score": 0.9290591478347778
+            },
+            {
+              "uid": 4293491154246934680,
+              "name": "Truth Feed",
+              "score": 0.8806903958320618
+            },
+            {
+              "uid": 3276628322907602932,
+              "name": "HTTPS",
+              "score": 0.8242428302764893
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_52408ea57499",
+            "chunk_710063b999dd",
+            "chunk_9d7c0819391c"
+          ],
+          "matched_entities": [
+            {
+              "uid": 605369295341498648,
+              "name": "Apple iOS",
+              "score": 0.9666414260864258
+            },
+            {
+              "uid": 7336848403730148771,
+              "name": "Apple App Store",
+              "score": 0.8383352756500244
+            },
+            {
+              "uid": 4978019565169164087,
+              "name": "Truth Social",
+              "score": 0.7736682295799255
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 7336848403730148771,
+              "name": "Apple App Store",
+              "score": 0.8383352756500244
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What won best drama at 79th Golden Globes?",
+    "answer": [
+      "The Power of the Dog"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_d858a13273bd",
+        "chunk_2d193db5bee2",
+        "chunk_d63dc48626f4",
+        "chunk_3d158d8b13de",
+        "chunk_ab50670dac32",
+        "chunk_c56e68613654"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_d858a13273bd",
+            "chunk_2d193db5bee2",
+            "chunk_d63dc48626f4"
+          ],
+          "matched_entities": [
+            {
+              "uid": 6816443052224569323,
+              "name": "Golden Globe Awards",
+              "score": 0.9045010209083557
+            },
+            {
+              "uid": 5510123331688249655,
+              "name": "Globes",
+              "score": 0.8979960680007935
+            },
+            {
+              "uid": 4007600744058802833,
+              "name": "79th Golden Globe Awards",
+              "score": 0.8869516849517822
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_3d158d8b13de",
+            "chunk_ab50670dac32",
+            "chunk_c56e68613654"
+          ],
+          "matched_entities": [
+            {
+              "uid": 4610779298474632615,
+              "name": "Best Drama Film",
+              "score": 0.8504046201705933
+            },
+            {
+              "uid": 4170890769792782481,
+              "name": "medical drama",
+              "score": 0.8155537843704224
+            },
+            {
+              "uid": 6775207461590502318,
+              "name": "Succession",
+              "score": 0.8058220744132996
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 6816443052224569323,
+              "name": "Golden Globe Awards",
+              "score": 0.9045010209083557
+            },
+            {
+              "uid": 4007600744058802833,
+              "name": "79th Golden Globe Awards",
+              "score": 0.8869516849517822
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "How much are GA Tech softball 2022 season tickets?",
+    "answer": [
+      "$100 per seat"
+    ],
+    "retrieval": {
+      "chunks": [
+        "chunk_89d16c3dbcb3",
+        "chunk_0b64e7f6288b",
+        "chunk_f4664d4b0612",
+        ""
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_89d16c3dbcb3",
+            "chunk_0b64e7f6288b",
+            "chunk_f4664d4b0612"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1437040323447851486,
+              "name": "Georgia Tech Softball",
+              "score": 0.9080374240875244
+            },
+            {
+              "uid": 3401806033976258264,
+              "name": "Georgia Tech",
+              "score": 0.8489652872085571
+            },
+            {
+              "uid": 7456474051941348071,
+              "name": "Single-Game Tickets",
+              "score": 0.8313218951225281
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_89d16c3dbcb3",
+            "chunk_0b64e7f6288b",
+            ""
+          ],
+          "matched_entities": [
+            {
+              "uid": 7456474051941348071,
+              "name": "Single-Game Tickets",
+              "score": 0.8268019556999207
+            },
+            {
+              "uid": 6260930904429344449,
+              "name": "2021 FBS football season",
+              "score": 0.7987498641014099
+            },
+            {
+              "uid": 1437040323447851486,
+              "name": "Georgia Tech Softball",
+              "score": 0.7898209095001221
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 1437040323447851486,
+              "name": "Georgia Tech Softball",
+              "score": 0.9080374240875244
+            },
+            {
+              "uid": 3401806033976258264,
+              "name": "Georgia Tech",
+              "score": 0.8489652872085571
+            }
+          ]
+        },
+        {
+          "chunks": [],
+          "matched_entities": [
+            {
+              "uid": 6260930904429344449,
+              "name": "2021 FBS football season",
+              "score": 0.7987498641014099
+            },
+            {
+              "uid": 1437040323447851486,
+              "name": "Georgia Tech Softball",
+              "score": 0.7898209095001221
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

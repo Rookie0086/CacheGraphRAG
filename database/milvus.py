@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 import torch
 from typing import List, Optional  # Optional, Dict,
 
@@ -202,7 +203,9 @@ class MilvusDB:
                     "params": {"dim": self.embed_model.dim},
                 },
                 {"name": "chunk_id", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "chunk_text", "type": DataType.VARCHAR, "params": {"max_length": 8192}},
                 {"name": "entity_uids", "type": DataType.VARCHAR, "params": {"max_length": 4096}},
+                {"name": "ts", "type": DataType.VARCHAR, "params": {"max_length": 64}},
             ],
             "auto_id": False,
         }
@@ -211,6 +214,7 @@ class MilvusDB:
             self.db_name,
             fields,
             consistency_level=consistency_level,
+            properties={"collection.ttl.seconds": 1209600},  # 设置 TTL 为 1 天
         )
 
         index = {
@@ -232,9 +236,9 @@ class MilvusDB:
             "fields": [
                 {"name": "uid", "type": DataType.INT64, "is_primary": True},
                 {"name": "name", "type": DataType.VARCHAR, "params": {"max_length": 255}},
-                    {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
-                    {"name": "type", "type": DataType.VARCHAR, "params": {"max_length": 255}},
-                    {"name": "desc", "type": DataType.VARCHAR, "params": {"max_length": 2048}},
+                {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
+                {"name": "type", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "desc", "type": DataType.VARCHAR, "params": {"max_length": 2048}},
                 # {"name": "tsz", "type": DataType.TIMESTAMPTZ, nullable=True},
             ],
             "auto_id": False,
@@ -244,7 +248,7 @@ class MilvusDB:
             self.db_name,
             fields,
             consistency_level=consistency_level,
-            # properties={"collection.ttl.seconds": 1209600},  # 设置 TTL 为 1 天
+            properties={"collection.ttl.seconds": 1209600},  # 设置 TTL 为 1 天
         )
 
         index = {
@@ -285,18 +289,58 @@ class MilvusDB:
             return []
         return [v for v in value.split(",") if v]
 
-    async def insert_chunk_async(self, chunk_id: str, vector: List[float], entity_uids: Optional[List[str]] = None):
+    def get_chunk_text(self, chunk_id: str) -> dict:
+        if not self.db:
+            self.load()
+        if not (self._has_field("chunk_id") and self._has_field("chunk_text")):
+            return {"text": "", "ts": ""}
+        output_fields = ["chunk_text"]
+        if self._has_field("ts"):
+            output_fields.append("ts")
+        try:
+            rows = self.db.query(
+                expr=f'chunk_id == "{chunk_id}"',
+                output_fields=output_fields,
+                limit=1,
+            )
+        except Exception:
+            return {"text": "", "ts": ""}
+        if not rows:
+            return {"text": "", "ts": ""}
+        row = rows[0]
+        text_value = row.get("chunk_text", "")
+        ts_value = row.get("ts", "")
+        if not isinstance(text_value, str):
+            text_value = ""
+        if not isinstance(ts_value, str):
+            ts_value = ""
+        return {"text": text_value, "ts": ts_value}
+
+    async def insert_chunk_async(
+        self,
+        chunk_id: str,
+        vector: List[float],
+        entity_uids: Optional[List[str]] = None,
+        chunk_text: Optional[str] = None,
+        timestamp: Optional[str] = None,
+    ):
         if not self.db:
             self.load()
         pk = abs(hash(chunk_id)) % (2**63 - 1)
         record = {"pk": pk, "vec": vector}
         if self._has_field("chunk_id"):
             record["chunk_id"] = chunk_id
+        if self._has_field("chunk_text") and chunk_text is not None:
+            record["chunk_text"] = chunk_text
         if self._has_field("entity_uids"):
             if entity_uids is None:
                 entity_uids = []
             entity_uids_str = ",".join(str(uid) for uid in entity_uids if str(uid))
             record["entity_uids"] = entity_uids_str
+        if self._has_field("ts"):
+            if not timestamp:
+                timestamp = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+            record["ts"] = timestamp
         print(f"=== inserting chunk {chunk_id} with pk {pk} into Milvus ===")
         self.db.insert([record])
         print(f"=== chunk {chunk_id} inserted into Milvus with pk {pk} ===")

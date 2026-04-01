@@ -1,0 +1,874 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d4" for="edge" attr.name="source_chunk" attr.type="string" />
+  <key id="d3" for="edge" attr.name="relation" attr.type="string" />
+  <key id="d2" for="node" attr.name="source_chunks" attr.type="string" />
+  <key id="d1" for="node" attr.name="type" attr.type="string" />
+  <key id="d0" for="node" attr.name="name" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="8021425893716008899">
+      <data key="d0">concert tour</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_64befd4372da,chunk_aa26751d4c96,chunk_d41e3c625ce8</data>
+    </node>
+    <node id="8736383492247626214">
+      <data key="d0">40th anniversary</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_aa26751d4c96</data>
+    </node>
+    <node id="6036613349213017284">
+      <data key="d0">Just Call Out My Name</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_10a1ce1e58c7</data>
+    </node>
+    <node id="6768247988299588357">
+      <data key="d0">United States</data>
+      <data key="d1">LOC</data>
+      <data key="d2">chunk_10a1ce1e58c7</data>
+    </node>
+    <node id="5161620550073320426">
+      <data key="d0">English</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_10a1ce1e58c7</data>
+    </node>
+    <node id="4841036440778558452">
+      <data key="d0">Release Date January 2 2022</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_ad3e685605f6,chunk_10a1ce1e58c7</data>
+    </node>
+    <node id="7995106508453145413">
+      <data key="d0">Kate Markowitz</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_dd2dda1efd87,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="6819587879126081120">
+      <data key="d0">Robbie Kondor</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_dd2dda1efd87,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="8195464633300140326">
+      <data key="d0">Carole King</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_fe72a6a9ba0f,chunk_ad3e685605f6,chunk_be933a0fd7b5,chunk_a5e8a9657245,chunk_dd2dda1efd87</data>
+    </node>
+    <node id="2654510988434560095">
+      <data key="d0">Just Call Out My Name</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">,chunk_dd2dda1efd87,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="2403416506001844142">
+      <data key="d0">CNN</data>
+      <data key="d1">ORG</data>
+      <data key="d2">,chunk_fe72a6a9ba0f,chunk_ad3e685605f6,chunk_be933a0fd7b5,chunk_dd2dda1efd87</data>
+    </node>
+    <node id="7356915655069876163">
+      <data key="d0">Beloved Singer/Songwriters</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_d41e3c625ce8</data>
+    </node>
+    <node id="6187393845117318084">
+      <data key="d0">The Troubadour</data>
+      <data key="d1">LOC</data>
+      <data key="d2">chunk_d41e3c625ce8</data>
+    </node>
+    <node id="4940486220507979208">
+      <data key="d0">1970 Performance</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_d41e3c625ce8</data>
+    </node>
+    <node id="1603331720697571162">
+      <data key="d0">CNN mobile apps</data>
+      <data key="d1">ORG</data>
+      <data key="d2">,chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="7416921326523055777">
+      <data key="d0">The film</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_2245d7d79aa3,chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="6049682207431658962">
+      <data key="d0">cable/satellite systems</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_2245d7d79aa3,chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="355463755579419897">
+      <data key="d0">CNNgo platforms</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_2245d7d79aa3,chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="6909309743058252658">
+      <data key="d0">Monday, January 3</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_2245d7d79aa3,chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="34178778141663669">
+      <data key="d0">Just Call Out My Name</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">,chunk_64befd4372da,chunk_ad3e685605f6,chunk_be933a0fd7b5</data>
+    </node>
+    <node id="3570183397858076307">
+      <data key="d0">James Taylor</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_fe72a6a9ba0f,chunk_ad3e685605f6,chunk_be933a0fd7b5,chunk_a5e8a9657245</data>
+    </node>
+    <node id="7266722370360148353">
+      <data key="d0">Frank Marshall</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_a5e8a9657245,chunk_be933a0fd7b5,chunk_64befd4372da</data>
+    </node>
+    <node id="7502815008904293133">
+      <data key="d0">Danny Kortchmar</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_a5e8a9657245,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="2451042654172527156">
+      <data key="d0">Peter Asher</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_a5e8a9657245,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="6927348327026038119">
+      <data key="d0">Russ Kunkel</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_a5e8a9657245,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="7772932333369774978">
+      <data key="d0">Leland Sklar</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_a5e8a9657245,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="1128611912620771007">
+      <data key="d0">Solzy at the Movies</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="2882773335609539216">
+      <data key="d0">Substack</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_b0fa519ebb9a</data>
+    </node>
+    <node id="2454237593518459801">
+      <data key="d0">CNN Films</data>
+      <data key="d1">ORG</data>
+      <data key="d2">,chunk_be933a0fd7b5</data>
+    </node>
+    <node id="7813620921774285577">
+      <data key="d0">Aly Parker</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_be933a0fd7b5</data>
+    </node>
+    <node id="1468209437793147680">
+      <data key="d0">The Kennedy / Marshall Company</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_be933a0fd7b5</data>
+    </node>
+    <node id="6986776551100336540">
+      <data key="d0">2010 Troubadour Reunion Tour</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_be933a0fd7b5</data>
+    </node>
+    <node id="896267189754316760">
+      <data key="d0">January 2, 2022 9:00PM ET/PT</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_be933a0fd7b5</data>
+    </node>
+    <node id="568302047604862291">
+      <data key="d0">Bush</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_723896bd0d14</data>
+    </node>
+    <node id="3218169271452750">
+      <data key="d0">Chicago P.D.</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_723896bd0d14</data>
+    </node>
+    <node id="2920275087060097233">
+      <data key="d0">Isaacs</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_a6fc07fb1d5c,chunk_723896bd0d14</data>
+    </node>
+    <node id="28973759390538083">
+      <data key="d0">Andrea Zonn</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="8212739773885936185">
+      <data key="d0">Arnold McCuller</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_64befd4372da,chunk_fe72a6a9ba0f</data>
+    </node>
+    <node id="7376541036557048034">
+      <data key="d0">Good Sam</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_829eb87ad938,chunk_1ed7d993a48c,chunk_4a47758f6b56,chunk_7bb95aec343b,chunk_a6fc07fb1d5c</data>
+    </node>
+    <node id="811522743812286700">
+      <data key="d0">Samantha Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_829eb87ad938,chunk_6461bae4cf9a</data>
+    </node>
+    <node id="5994974602694068810">
+      <data key="d0">Dr. Rob Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_829eb87ad938,chunk_a6fc07fb1d5c</data>
+    </node>
+    <node id="7742397347714700502">
+      <data key="d0">CBS</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_829eb87ad938</data>
+    </node>
+    <node id="3398570752426630763">
+      <data key="d0">Rob</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_1ed7d993a48c</data>
+    </node>
+    <node id="5113337624876915653">
+      <data key="d0">The Good Doctor</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_1ed7d993a48c,chunk_a6fc07fb1d5c</data>
+    </node>
+    <node id="6430382257318829891">
+      <data key="d0">California hospital</data>
+      <data key="d1">LOC</data>
+      <data key="d2">chunk_1ed7d993a48c,</data>
+    </node>
+    <node id="4492150234089907682">
+      <data key="d0">Freddie Highmore</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_1ed7d993a48c</data>
+    </node>
+    <node id="6385170637061697834">
+      <data key="d0">Sophia Bush</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_a1863ff36e18,chunk_a6fc07fb1d5c</data>
+    </node>
+    <node id="6220004803716927871">
+      <data key="d0">Dr. Sam Griffith</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_a1863ff36e18,chunk_4a47758f6b56,chunk_7bb95aec343b,chunk_a6fc07fb1d5c</data>
+    </node>
+    <node id="1922805602540043316">
+      <data key="d0">Monique Jones</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_6461bae4cf9a</data>
+    </node>
+    <node id="5878233459981585764">
+      <data key="d0">Common Sense Media</data>
+      <data key="d1">ORG</data>
+      <data key="d2">chunk_6461bae4cf9a</data>
+    </node>
+    <node id="678758610400813013">
+      <data key="d0">Family Drama</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_a1863ff36e18,chunk_a6fc07fb1d5c,chunk_6461bae4cf9a</data>
+    </node>
+    <node id="4654691141915132073">
+      <data key="d0">hospital</data>
+      <data key="d1">LOC</data>
+      <data key="d2">,chunk_a6fc07fb1d5c</data>
+    </node>
+    <node id="8690026068231196257">
+      <data key="d0">Grey's Anatomy</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_4a47758f6b56,chunk_a6fc07fb1d5c,chunk_e233a3d3bc07</data>
+    </node>
+    <node id="1981136175216412869">
+      <data key="d0">She</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_68af5f307b28</data>
+    </node>
+    <node id="3895907452692964437">
+      <data key="d0">patients</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_68af5f307b28</data>
+    </node>
+    <node id="2465160382096483641">
+      <data key="d0">series</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_68af5f307b28</data>
+    </node>
+    <node id="8271254661816548580">
+      <data key="d0">Dr</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_68af5f307b28</data>
+    </node>
+    <node id="5988092931671724512">
+      <data key="d0">Malcolm Kingsley</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_a1863ff36e18</data>
+    </node>
+    <node id="1926186692745543168">
+      <data key="d0">Skye P. Marshall</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_a1863ff36e18</data>
+    </node>
+    <node id="1410292020662222645">
+      <data key="d0">Omar Maskati</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_a1863ff36e18</data>
+    </node>
+    <node id="8262015308877209645">
+      <data key="d0">Davi Santos</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_a1863ff36e18</data>
+    </node>
+    <node id="1057526942453741968">
+      <data key="d0">Interracial Relationships</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_a1863ff36e18</data>
+    </node>
+    <node id="7804863951060594805">
+      <data key="d0">Wealthy Black Americans</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_a1863ff36e18</data>
+    </node>
+    <node id="9011378791697921559">
+      <data key="d0">Sam</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">,chunk_e233a3d3bc07</data>
+    </node>
+    <node id="7989471501036497101">
+      <data key="d0">simulated heart surgery</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_7bb95aec343b</data>
+    </node>
+    <node id="1626077481956396750">
+      <data key="d0">communication and teamwork</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_7bb95aec343b</data>
+    </node>
+    <node id="2656409140281292534">
+      <data key="d0">great leaders</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_7bb95aec343b</data>
+    </node>
+    <node id="2716401163652370034">
+      <data key="d0">Dr_House</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_4a47758f6b56</data>
+    </node>
+    <node id="8850699042951385209">
+      <data key="d0">New_Amsterdam_Hero</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_4a47758f6b56,chunk_e233a3d3bc07</data>
+    </node>
+    <node id="2136695886822326708">
+      <data key="d0">Good Sam</data>
+      <data key="d1">CONCEPT</data>
+      <data key="d2">chunk_e233a3d3bc07</data>
+    </node>
+    <node id="2631069537891671744">
+      <data key="d0">Griff</data>
+      <data key="d1">PERSON</data>
+      <data key="d2">chunk_e233a3d3bc07</data>
+    </node>
+    <node id="7487795736446625915">
+      <data key="d0">months-long coma</data>
+      <data key="d1">EVENT</data>
+      <data key="d2">chunk_e233a3d3bc07</data>
+    </node>
+    <edge source="8021425893716008899" target="8736383492247626214" id="IN_HONOR_OF_chunk_aa26751d4c96">
+      <data key="d3">IN_HONOR_OF</data>
+      <data key="d4">chunk_aa26751d4c96</data>
+    </edge>
+    <edge source="8021425893716008899" target="7356915655069876163" id="FEATURED_chunk_d41e3c625ce8">
+      <data key="d3">FEATURED</data>
+      <data key="d4">chunk_d41e3c625ce8</data>
+    </edge>
+    <edge source="8021425893716008899" target="34178778141663669" id="ALSO_KNOWN_AS_chunk_64befd4372da">
+      <data key="d3">ALSO_KNOWN_AS</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="6036613349213017284" target="6768247988299588357" id="COUNTRY_OF_ORIGIN_chunk_10a1ce1e58c7">
+      <data key="d3">COUNTRY_OF_ORIGIN</data>
+      <data key="d4">chunk_10a1ce1e58c7</data>
+    </edge>
+    <edge source="6036613349213017284" target="5161620550073320426" id="LANGUAGE_chunk_10a1ce1e58c7">
+      <data key="d3">LANGUAGE</data>
+      <data key="d4">chunk_10a1ce1e58c7</data>
+    </edge>
+    <edge source="4841036440778558452" target="6768247988299588357" id="LOCATED_IN_chunk_10a1ce1e58c7">
+      <data key="d3">LOCATED_IN</data>
+      <data key="d4">chunk_10a1ce1e58c7</data>
+    </edge>
+    <edge source="7995106508453145413" target="2654510988434560095" id="FEATURED_IN_chunk_dd2dda1efd87">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_dd2dda1efd87</data>
+    </edge>
+    <edge source="7995106508453145413" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="7995106508453145413" target="8021425893716008899" id="ADDITIONAL_MUSICIAN_IN_chunk_64befd4372da">
+      <data key="d3">ADDITIONAL_MUSICIAN_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="6819587879126081120" target="2654510988434560095" id="FEATURED_IN_chunk_dd2dda1efd87">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_dd2dda1efd87</data>
+    </edge>
+    <edge source="6819587879126081120" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="6819587879126081120" target="8021425893716008899" id="ADDITIONAL_MUSICIAN_IN_chunk_64befd4372da">
+      <data key="d3">ADDITIONAL_MUSICIAN_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="8195464633300140326" target="2654510988434560095" id="FEATURED_IN_chunk_dd2dda1efd87">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_dd2dda1efd87</data>
+    </edge>
+    <edge source="8195464633300140326" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="8195464633300140326" target="3570183397858076307" id="FEATURED_IN_chunk_a5e8a9657245">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="8195464633300140326" target="8021425893716008899" id="FEATURED_IN_chunk_64befd4372da">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="2654510988434560095" target="2403416506001844142" id="AIRED_ON_chunk_dd2dda1efd87">
+      <data key="d3">AIRED_ON</data>
+      <data key="d4">chunk_dd2dda1efd87</data>
+    </edge>
+    <edge source="2654510988434560095" target="2403416506001844142" id="AIRED_ON_chunk_fe72a6a9ba0f">
+      <data key="d3">AIRED_ON</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="6187393845117318084" target="6187393845117318084" id="LOCATED_IN_chunk_d41e3c625ce8">
+      <data key="d3">LOCATED_IN</data>
+      <data key="d4">chunk_d41e3c625ce8</data>
+    </edge>
+    <edge source="4940486220507979208" target="7356915655069876163" id="PERFORMED_BY_chunk_d41e3c625ce8">
+      <data key="d3">PERFORMED_BY</data>
+      <data key="d4">chunk_d41e3c625ce8</data>
+    </edge>
+    <edge source="4940486220507979208" target="6187393845117318084" id="LOCATED_AT_chunk_d41e3c625ce8">
+      <data key="d3">LOCATED_AT</data>
+      <data key="d4">chunk_d41e3c625ce8</data>
+    </edge>
+    <edge source="1603331720697571162" target="2403416506001844142" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="7416921326523055777" target="6049682207431658962" id="AVAILABLE_ON_chunk_2245d7d79aa3">
+      <data key="d3">AVAILABLE_ON</data>
+      <data key="d4">chunk_2245d7d79aa3</data>
+    </edge>
+    <edge source="7416921326523055777" target="6049682207431658962" id="AVAILABLE_ON_chunk_b0fa519ebb9a">
+      <data key="d3">AVAILABLE_ON</data>
+      <data key="d4">chunk_b0fa519ebb9a</data>
+    </edge>
+    <edge source="7416921326523055777" target="355463755579419897" id="AVAILABLE_ON_chunk_2245d7d79aa3">
+      <data key="d3">AVAILABLE_ON</data>
+      <data key="d4">chunk_2245d7d79aa3</data>
+    </edge>
+    <edge source="7416921326523055777" target="355463755579419897" id="AVAILABLE_ON_chunk_b0fa519ebb9a">
+      <data key="d3">AVAILABLE_ON</data>
+      <data key="d4">chunk_b0fa519ebb9a</data>
+    </edge>
+    <edge source="7416921326523055777" target="6909309743058252658" id="AVAILABLE_FROM_chunk_2245d7d79aa3">
+      <data key="d3">AVAILABLE_FROM</data>
+      <data key="d4">chunk_2245d7d79aa3</data>
+    </edge>
+    <edge source="7416921326523055777" target="6909309743058252658" id="AVAILABLE_UNTIL_chunk_2245d7d79aa3">
+      <data key="d3">AVAILABLE_UNTIL</data>
+      <data key="d4">chunk_2245d7d79aa3</data>
+    </edge>
+    <edge source="7416921326523055777" target="6909309743058252658" id="AVAILABLE_FROM_chunk_b0fa519ebb9a">
+      <data key="d3">AVAILABLE_FROM</data>
+      <data key="d4">chunk_b0fa519ebb9a</data>
+    </edge>
+    <edge source="7416921326523055777" target="6909309743058252658" id="AVAILABLE_UNTIL_chunk_b0fa519ebb9a">
+      <data key="d3">AVAILABLE_UNTIL</data>
+      <data key="d4">chunk_b0fa519ebb9a</data>
+    </edge>
+    <edge source="7416921326523055777" target="1603331720697571162" id="AVAILABLE_ON_chunk_b0fa519ebb9a">
+      <data key="d3">AVAILABLE_ON</data>
+      <data key="d4">chunk_b0fa519ebb9a</data>
+    </edge>
+    <edge source="34178778141663669" target="2654510988434560095" id="possible_same_as_">
+      <data key="d3">possible_same_as</data>
+      <data key="d4" />
+    </edge>
+    <edge source="34178778141663669" target="8195464633300140326" id="FEATURES_chunk_ad3e685605f6">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_ad3e685605f6</data>
+    </edge>
+    <edge source="34178778141663669" target="8195464633300140326" id="CELEBRATES_chunk_be933a0fd7b5">
+      <data key="d3">CELEBRATES</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="3570183397858076307" id="FEATURES_chunk_ad3e685605f6">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_ad3e685605f6</data>
+    </edge>
+    <edge source="34178778141663669" target="3570183397858076307" id="CELEBRATES_chunk_be933a0fd7b5">
+      <data key="d3">CELEBRATES</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="4841036440778558452" id="PREMIERED_ON_chunk_ad3e685605f6">
+      <data key="d3">PREMIERED_ON</data>
+      <data key="d4">chunk_ad3e685605f6</data>
+    </edge>
+    <edge source="34178778141663669" target="2403416506001844142" id="PREMIERED_AT_chunk_ad3e685605f6">
+      <data key="d3">PREMIERED_AT</data>
+      <data key="d4">chunk_ad3e685605f6</data>
+    </edge>
+    <edge source="34178778141663669" target="896267189754316760" id="PREMIERE_DATE_chunk_be933a0fd7b5">
+      <data key="d3">PREMIERE_DATE</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="7266722370360148353" id="DIRECTED_BY_chunk_be933a0fd7b5">
+      <data key="d3">DIRECTED_BY</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="7266722370360148353" id="PRODUCED_BY_chunk_be933a0fd7b5">
+      <data key="d3">PRODUCED_BY</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="7813620921774285577" id="PRODUCED_BY_chunk_be933a0fd7b5">
+      <data key="d3">PRODUCED_BY</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="1468209437793147680" id="PRODUCED_BY_chunk_be933a0fd7b5">
+      <data key="d3">PRODUCED_BY</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="34178778141663669" target="6986776551100336540" id="FEATURES_chunk_be933a0fd7b5">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="3570183397858076307" target="3570183397858076307" id="FEATURED_IN_chunk_a5e8a9657245">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="3570183397858076307" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="3570183397858076307" target="8021425893716008899" id="FEATURED_IN_chunk_64befd4372da">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="7266722370360148353" target="3570183397858076307" id="DIRECTED_chunk_a5e8a9657245">
+      <data key="d3">DIRECTED</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="7266722370360148353" target="8021425893716008899" id="DIRECTED_chunk_64befd4372da">
+      <data key="d3">DIRECTED</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="7502815008904293133" target="3570183397858076307" id="FEATURED_IN_chunk_a5e8a9657245">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="7502815008904293133" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="7502815008904293133" target="8021425893716008899" id="FEATURED_IN_chunk_64befd4372da">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="2451042654172527156" target="3570183397858076307" id="FEATURED_IN_chunk_a5e8a9657245">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="2451042654172527156" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="2451042654172527156" target="8021425893716008899" id="FEATURED_IN_chunk_64befd4372da">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="6927348327026038119" target="3570183397858076307" id="FEATURED_IN_chunk_a5e8a9657245">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="6927348327026038119" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="6927348327026038119" target="8021425893716008899" id="FEATURED_IN_chunk_64befd4372da">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="7772932333369774978" target="3570183397858076307" id="FEATURED_IN_chunk_a5e8a9657245">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_a5e8a9657245</data>
+    </edge>
+    <edge source="7772932333369774978" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="7772932333369774978" target="8021425893716008899" id="FEATURED_IN_chunk_64befd4372da">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="1128611912620771007" target="2882773335609539216" id="PUBLISHED_ON_chunk_b0fa519ebb9a">
+      <data key="d3">PUBLISHED_ON</data>
+      <data key="d4">chunk_b0fa519ebb9a</data>
+    </edge>
+    <edge source="2454237593518459801" target="2403416506001844142" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="2454237593518459801" target="34178778141663669" id="PREMIERED_chunk_be933a0fd7b5">
+      <data key="d3">PREMIERED</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="6986776551100336540" target="8195464633300140326" id="PERFORMED_BY_chunk_be933a0fd7b5">
+      <data key="d3">PERFORMED_BY</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="6986776551100336540" target="3570183397858076307" id="PERFORMED_BY_chunk_be933a0fd7b5">
+      <data key="d3">PERFORMED_BY</data>
+      <data key="d4">chunk_be933a0fd7b5</data>
+    </edge>
+    <edge source="568302047604862291" target="3218169271452750" id="HEADLINED_chunk_723896bd0d14">
+      <data key="d3">HEADLINED</data>
+      <data key="d4">chunk_723896bd0d14</data>
+    </edge>
+    <edge source="28973759390538083" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="28973759390538083" target="8021425893716008899" id="ADDITIONAL_MUSICIAN_IN_chunk_64befd4372da">
+      <data key="d3">ADDITIONAL_MUSICIAN_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="8212739773885936185" target="2654510988434560095" id="PERFORMED_IN_chunk_fe72a6a9ba0f">
+      <data key="d3">PERFORMED_IN</data>
+      <data key="d4">chunk_fe72a6a9ba0f</data>
+    </edge>
+    <edge source="8212739773885936185" target="8021425893716008899" id="ADDITIONAL_MUSICIAN_IN_chunk_64befd4372da">
+      <data key="d3">ADDITIONAL_MUSICIAN_IN</data>
+      <data key="d4">chunk_64befd4372da</data>
+    </edge>
+    <edge source="7376541036557048034" target="7742397347714700502" id="AIRED_ON_chunk_829eb87ad938">
+      <data key="d3">AIRED_ON</data>
+      <data key="d4">chunk_829eb87ad938</data>
+    </edge>
+    <edge source="7376541036557048034" target="7376541036557048034" id="FEATURES_chunk_1ed7d993a48c">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_1ed7d993a48c</data>
+    </edge>
+    <edge source="7376541036557048034" target="7376541036557048034" id="FEATURES_chunk_7bb95aec343b">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_7bb95aec343b</data>
+    </edge>
+    <edge source="7376541036557048034" target="3398570752426630763" id="FEATURES_chunk_1ed7d993a48c">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_1ed7d993a48c</data>
+    </edge>
+    <edge source="7376541036557048034" target="2920275087060097233" id="STARRING_chunk_a6fc07fb1d5c">
+      <data key="d3">STARRING</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="7376541036557048034" target="6385170637061697834" id="STARRING_chunk_a6fc07fb1d5c">
+      <data key="d3">STARRING</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="7376541036557048034" target="6220004803716927871" id="FEATURES_CHARACTER_chunk_a6fc07fb1d5c">
+      <data key="d3">FEATURES_CHARACTER</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="7376541036557048034" target="5994974602694068810" id="FEATURES_CHARACTER_chunk_a6fc07fb1d5c">
+      <data key="d3">FEATURES_CHARACTER</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="7376541036557048034" target="678758610400813013" id="BELONGS_TO_GENRE_chunk_a6fc07fb1d5c">
+      <data key="d3">BELONGS_TO_GENRE</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="7376541036557048034" target="678758610400813013" id="IMPLIES_VIEWING_OF_chunk_a6fc07fb1d5c">
+      <data key="d3">IMPLIES_VIEWING_OF</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="7376541036557048034" target="7989471501036497101" id="INCLUDES_chunk_7bb95aec343b">
+      <data key="d3">INCLUDES</data>
+      <data key="d4">chunk_7bb95aec343b</data>
+    </edge>
+    <edge source="7376541036557048034" target="8690026068231196257" id="SIMILAR_TO_chunk_4a47758f6b56">
+      <data key="d3">SIMILAR_TO</data>
+      <data key="d4">chunk_4a47758f6b56</data>
+    </edge>
+    <edge source="811522743812286700" target="5994974602694068810" id="CHILD_OF_chunk_829eb87ad938">
+      <data key="d3">CHILD_OF</data>
+      <data key="d4">chunk_829eb87ad938</data>
+    </edge>
+    <edge source="811522743812286700" target="7376541036557048034" id="CHARACTER_IN_chunk_829eb87ad938">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_829eb87ad938</data>
+    </edge>
+    <edge source="811522743812286700" target="678758610400813013" id="FEATURED_IN_chunk_6461bae4cf9a">
+      <data key="d3">FEATURED_IN</data>
+      <data key="d4">chunk_6461bae4cf9a</data>
+    </edge>
+    <edge source="5994974602694068810" target="811522743812286700" id="PARENT_OF_chunk_829eb87ad938">
+      <data key="d3">PARENT_OF</data>
+      <data key="d4">chunk_829eb87ad938</data>
+    </edge>
+    <edge source="5994974602694068810" target="7376541036557048034" id="CHARACTER_IN_chunk_829eb87ad938">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_829eb87ad938</data>
+    </edge>
+    <edge source="5994974602694068810" target="6220004803716927871" id="FAMILY_DAUGHTER_OF_chunk_a6fc07fb1d5c">
+      <data key="d3">FAMILY_DAUGHTER_OF</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="5994974602694068810" target="4654691141915132073" id="WORKS_AT_chunk_a6fc07fb1d5c">
+      <data key="d3">WORKS_AT</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="3398570752426630763" target="5994974602694068810" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="5113337624876915653" target="5113337624876915653" id="MAIN_CHARACTER_OF_chunk_1ed7d993a48c">
+      <data key="d3">MAIN_CHARACTER_OF</data>
+      <data key="d4">chunk_1ed7d993a48c</data>
+    </edge>
+    <edge source="5113337624876915653" target="6430382257318829891" id="WORKS_AT_chunk_1ed7d993a48c">
+      <data key="d3">WORKS_AT</data>
+      <data key="d4">chunk_1ed7d993a48c</data>
+    </edge>
+    <edge source="5113337624876915653" target="678758610400813013" id="BELONGS_TO_GENRE_chunk_a6fc07fb1d5c">
+      <data key="d3">BELONGS_TO_GENRE</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="4492150234089907682" target="5113337624876915653" id="PORTRAYS_chunk_1ed7d993a48c">
+      <data key="d3">PORTRAYS</data>
+      <data key="d4">chunk_1ed7d993a48c</data>
+    </edge>
+    <edge source="6385170637061697834" target="568302047604862291" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="6220004803716927871" target="811522743812286700" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="6220004803716927871" target="5994974602694068810" id="FAMILY_FATHER_OF_chunk_a6fc07fb1d5c">
+      <data key="d3">FAMILY_FATHER_OF</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="6220004803716927871" target="4654691141915132073" id="WORKS_AT_chunk_a6fc07fb1d5c">
+      <data key="d3">WORKS_AT</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="6220004803716927871" target="6385170637061697834" id="PORTRAYED_BY_chunk_a1863ff36e18">
+      <data key="d3">PORTRAYED_BY</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="6220004803716927871" target="678758610400813013" id="CHARACTER_IN_chunk_a1863ff36e18">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="6220004803716927871" target="2656409140281292534" id="INSTANCE_OF_chunk_7bb95aec343b">
+      <data key="d3">INSTANCE_OF</data>
+      <data key="d4">chunk_7bb95aec343b</data>
+    </edge>
+    <edge source="6220004803716927871" target="7376541036557048034" id="MAIN_CHARACTER_OF_chunk_4a47758f6b56">
+      <data key="d3">MAIN_CHARACTER_OF</data>
+      <data key="d4">chunk_4a47758f6b56</data>
+    </edge>
+    <edge source="6220004803716927871" target="6220004803716927871" id="PARENT_OF_chunk_4a47758f6b56">
+      <data key="d3">PARENT_OF</data>
+      <data key="d4">chunk_4a47758f6b56</data>
+    </edge>
+    <edge source="6220004803716927871" target="2716401163652370034" id="SIMILAR_TO_chunk_4a47758f6b56">
+      <data key="d3">SIMILAR_TO</data>
+      <data key="d4">chunk_4a47758f6b56</data>
+    </edge>
+    <edge source="6220004803716927871" target="8850699042951385209" id="SHARES_CONDITION_WITH_chunk_4a47758f6b56">
+      <data key="d3">SHARES_CONDITION_WITH</data>
+      <data key="d4">chunk_4a47758f6b56</data>
+    </edge>
+    <edge source="1922805602540043316" target="5878233459981585764" id="WORKS_FOR_chunk_6461bae4cf9a">
+      <data key="d3">WORKS_FOR</data>
+      <data key="d4">chunk_6461bae4cf9a</data>
+    </edge>
+    <edge source="5878233459981585764" target="5878233459981585764" id="AFFILIATED_WITH_chunk_6461bae4cf9a">
+      <data key="d3">AFFILIATED_WITH</data>
+      <data key="d4">chunk_6461bae4cf9a</data>
+    </edge>
+    <edge source="4654691141915132073" target="6430382257318829891" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="8690026068231196257" target="678758610400813013" id="BELONGS_TO_GENRE_chunk_a6fc07fb1d5c">
+      <data key="d3">BELONGS_TO_GENRE</data>
+      <data key="d4">chunk_a6fc07fb1d5c</data>
+    </edge>
+    <edge source="1981136175216412869" target="3895907452692964437" id="CARES_FOR_chunk_68af5f307b28">
+      <data key="d3">CARES_FOR</data>
+      <data key="d4">chunk_68af5f307b28</data>
+    </edge>
+    <edge source="2465160382096483641" target="8271254661816548580" id="FEATURES_chunk_68af5f307b28">
+      <data key="d3">FEATURES</data>
+      <data key="d4">chunk_68af5f307b28</data>
+    </edge>
+    <edge source="5988092931671724512" target="5988092931671724512" id="PORTRAYED_BY_chunk_a1863ff36e18">
+      <data key="d3">PORTRAYED_BY</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="5988092931671724512" target="678758610400813013" id="CHARACTER_IN_chunk_a1863ff36e18">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="5988092931671724512" target="7804863951060594805" id="REPRESENTS_chunk_a1863ff36e18">
+      <data key="d3">REPRESENTS</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="5988092931671724512" target="6220004803716927871" id="LOVE_INTEREST_OF_chunk_a1863ff36e18">
+      <data key="d3">LOVE_INTEREST_OF</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="1926186692745543168" target="678758610400813013" id="CAST_MEMBER_chunk_a1863ff36e18">
+      <data key="d3">CAST_MEMBER</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="1410292020662222645" target="678758610400813013" id="CAST_MEMBER_chunk_a1863ff36e18">
+      <data key="d3">CAST_MEMBER</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="8262015308877209645" target="678758610400813013" id="CAST_MEMBER_chunk_a1863ff36e18">
+      <data key="d3">CAST_MEMBER</data>
+      <data key="d4">chunk_a1863ff36e18</data>
+    </edge>
+    <edge source="9011378791697921559" target="6220004803716927871" id="alias_of_">
+      <data key="d3">alias_of</data>
+      <data key="d4" />
+    </edge>
+    <edge source="9011378791697921559" target="2136695886822326708" id="CHARACTER_IN_chunk_e233a3d3bc07">
+      <data key="d3">CHARACTER_IN</data>
+      <data key="d4">chunk_e233a3d3bc07</data>
+    </edge>
+    <edge source="9011378791697921559" target="9011378791697921559" id="HOLDS_POSITION_chunk_e233a3d3bc07">
+      <data key="d3">HOLDS_POSITION</data>
+      <data key="d4">chunk_e233a3d3bc07</data>
+    </edge>
+    <edge source="2136695886822326708" target="8690026068231196257" id="INSPIRED_BY_chunk_e233a3d3bc07">
+      <data key="d3">INSPIRED_BY</data>
+      <data key="d4">chunk_e233a3d3bc07</data>
+    </edge>
+    <edge source="2631069537891671744" target="9011378791697921559" id="FATHER_OF_chunk_e233a3d3bc07">
+      <data key="d3">FATHER_OF</data>
+      <data key="d4">chunk_e233a3d3bc07</data>
+    </edge>
+    <edge source="2631069537891671744" target="9011378791697921559" id="LEARNS_POSITION_OF_chunk_e233a3d3bc07">
+      <data key="d3">LEARNS_POSITION_OF</data>
+      <data key="d4">chunk_e233a3d3bc07</data>
+    </edge>
+    <edge source="2631069537891671744" target="7487795736446625915" id="UNDERWENT_chunk_e233a3d3bc07">
+      <data key="d3">UNDERWENT</data>
+      <data key="d4">chunk_e233a3d3bc07</data>
+    </edge>
+  </graph>
+</graphml>

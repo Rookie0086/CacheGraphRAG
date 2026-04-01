@@ -75,7 +75,8 @@ def get_rgb_info(file="en", chunk_size=512):
                 # print(len(texts[-1]))
 
             else:
-                texts += concat_strings_in_list(instance["positive"])
+                pos_text = " ".join(concat_strings_in_list(instance["positive"]))
+                texts.append(pos_text)
                 # texts += concat_strings_in_list(instance["negative"])
             questions.append(instance["query"])
             answers.append(instance["answer"])

@@ -106,6 +106,18 @@ class NebulaClient:
         )
         time.sleep(10)
 
+    def create_graph_space(self, db_name):
+        self.session.execute(
+            f"CREATE SPACE IF NOT EXISTS {db_name}(vid_type=INT64, partition_num=10, replica_factor=1);"
+        )
+        time.sleep(10)
+        self.session.execute(
+            f"USE {db_name}; CREATE TAG IF NOT EXISTS entity(name string, type string, source_chunk string);"
+        )
+        self.session.execute(
+            f"USE {db_name}; CREATE EDGE IF NOT EXISTS relationship(relationship string, source_chunk string);"
+        )
+
     def drop_space(self, db_name):
         if not isinstance(db_name, list):
             db_name = [db_name]
@@ -289,6 +301,8 @@ def prepare_subjs_param(
 
 def escape_str(value: str) -> str:
     """Escape String for NebulaGraph Query."""
+    if not value:
+        return ""
     patterns = {
         '"': " ",
     }
@@ -589,7 +603,7 @@ class NebulaDB:
         tag = self._tags[0]
         vid_field = self._format_vid(vertex_id)
         # For example space: entity(name, type, source_chunks)
-        allowed = list(set((self._tag_prop_names or []) + ["name", "type", "source_chunks"]))
+        allowed = list(set((self._tag_prop_names or []) + ["name", "type", "source_chunk"]))
         props = self._filter_props(properties, allowed)
 
         if props:

@@ -1,0 +1,505 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-03-30">
+    <creator>NetworkX 3.4.2</creator>
+  </meta>
+  <graph defaultedgetype="directed" mode="static" name="">
+    <attributes mode="static" class="edge">
+      <attribute id="3" title="relation" type="string" />
+      <attribute id="4" title="source_chunk" type="string" />
+      <attribute id="5" title="networkx_key" type="string" />
+    </attributes>
+    <attributes mode="static" class="node">
+      <attribute id="0" title="name" type="string" />
+      <attribute id="1" title="type" type="string" />
+      <attribute id="2" title="source_chunks" type="string" />
+    </attributes>
+    <nodes>
+      <node id="7150019083269396430" label="7150019083269396430">
+        <attvalues>
+          <attvalue for="0" value="Bush" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_68b8634d69d8," />
+        </attvalues>
+      </node>
+      <node id="1000078523644039089" label="1000078523644039089">
+        <attvalues>
+          <attvalue for="0" value="Chicago P.D." />
+          <attvalue for="1" value="EVENT" />
+          <attvalue for="2" value="chunk_68b8634d69d8" />
+        </attvalues>
+      </node>
+      <node id="1588776035584380798" label="1588776035584380798">
+        <attvalues>
+          <attvalue for="0" value="Isaacs" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_68b8634d69d8,chunk_6ec124dfe350,chunk_b920e6349a2d" />
+        </attvalues>
+      </node>
+      <node id="8329590964331007227" label="8329590964331007227">
+        <attvalues>
+          <attvalue for="0" value="Sophia Bush" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value=",chunk_6ec124dfe350,chunk_d9d86c11c19d,chunk_b920e6349a2d" />
+        </attvalues>
+      </node>
+      <node id="127684024268212179" label="127684024268212179">
+        <attvalues>
+          <attvalue for="0" value="Good Sam" />
+          <attvalue for="1" value="EVENT" />
+          <attvalue for="2" value="chunk_3947205bfbd4,chunk_6ec124dfe350,chunk_a9bef4b100c5,chunk_b920e6349a2d" />
+        </attvalues>
+      </node>
+      <node id="5911590566581847463" label="5911590566581847463">
+        <attvalues>
+          <attvalue for="0" value="Samantha Griffith" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_d9d86c11c19d,chunk_b920e6349a2d" />
+        </attvalues>
+      </node>
+      <node id="1828748302205740597" label="1828748302205740597">
+        <attvalues>
+          <attvalue for="0" value="Dr. Rob Griffith" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value=",chunk_6ec124dfe350,chunk_b920e6349a2d" />
+        </attvalues>
+      </node>
+      <node id="7113792390560476406" label="7113792390560476406">
+        <attvalues>
+          <attvalue for="0" value="CBS" />
+          <attvalue for="1" value="ORG" />
+          <attvalue for="2" value="chunk_b920e6349a2d" />
+        </attvalues>
+      </node>
+      <node id="4221037901187097061" label="4221037901187097061">
+        <attvalues>
+          <attvalue for="0" value="heart surgery" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_a9bef4b100c5" />
+        </attvalues>
+      </node>
+      <node id="8488541039664135386" label="8488541039664135386">
+        <attvalues>
+          <attvalue for="0" value="patient punched by wife" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_a9bef4b100c5" />
+        </attvalues>
+      </node>
+      <node id="6209363090629831677" label="6209363090629831677">
+        <attvalues>
+          <attvalue for="0" value="near-fatal car accident" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_a9bef4b100c5" />
+        </attvalues>
+      </node>
+      <node id="3043383999449665833" label="3043383999449665833">
+        <attvalues>
+          <attvalue for="0" value="coding" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_a9bef4b100c5" />
+        </attvalues>
+      </node>
+      <node id="1234904430332071149" label="1234904430332071149">
+        <attvalues>
+          <attvalue for="0" value="Rob" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value=",chunk_3947205bfbd4" />
+        </attvalues>
+      </node>
+      <node id="2002534135897460931" label="2002534135897460931">
+        <attvalues>
+          <attvalue for="0" value="The Good Doctor" />
+          <attvalue for="1" value="EVENT" />
+          <attvalue for="2" value="chunk_3947205bfbd4,chunk_6ec124dfe350" />
+        </attvalues>
+      </node>
+      <node id="8337002926548059412" label="8337002926548059412">
+        <attvalues>
+          <attvalue for="0" value="California hospital" />
+          <attvalue for="1" value="LOC" />
+          <attvalue for="2" value="chunk_3947205bfbd4" />
+        </attvalues>
+      </node>
+      <node id="5303333131836015818" label="5303333131836015818">
+        <attvalues>
+          <attvalue for="0" value="Freddie Highmore" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_3947205bfbd4" />
+        </attvalues>
+      </node>
+      <node id="4129529745985603956" label="4129529745985603956">
+        <attvalues>
+          <attvalue for="0" value="Sam" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_3947205bfbd4,chunk_6ec124dfe350" />
+        </attvalues>
+      </node>
+      <node id="810054106290100440" label="810054106290100440">
+        <attvalues>
+          <attvalue for="0" value="Malcolm Kingsley" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="5434808108549796098" label="5434808108549796098">
+        <attvalues>
+          <attvalue for="0" value="Skye P. Marshall" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="7107233825071009949" label="7107233825071009949">
+        <attvalues>
+          <attvalue for="0" value="Omar Maskati" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="1108406551255846812" label="1108406551255846812">
+        <attvalues>
+          <attvalue for="0" value="Davi Santos" />
+          <attvalue for="1" value="PERSON" />
+          <attvalue for="2" value="chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="8767717582087046356" label="8767717582087046356">
+        <attvalues>
+          <attvalue for="0" value="Medical Drama" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_6ec124dfe350,chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="6592750618317767036" label="6592750618317767036">
+        <attvalues>
+          <attvalue for="0" value="Interracial Relationship" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="7263568338038293557" label="7263568338038293557">
+        <attvalues>
+          <attvalue for="0" value="Wealthy Black Americans" />
+          <attvalue for="1" value="CONCEPT" />
+          <attvalue for="2" value="chunk_d9d86c11c19d" />
+        </attvalues>
+      </node>
+      <node id="170245209947657665" label="170245209947657665">
+        <attvalues>
+          <attvalue for="0" value="hospital" />
+          <attvalue for="1" value="LOC" />
+          <attvalue for="2" value="chunk_6ec124dfe350" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="7150019083269396430" target="1000078523644039089" id="0">
+        <attvalues>
+          <attvalue for="3" value="HEADLINED" />
+          <attvalue for="4" value="chunk_68b8634d69d8" />
+          <attvalue for="5" value="HEADLINED_chunk_68b8634d69d8" />
+        </attvalues>
+      </edge>
+      <edge source="8329590964331007227" target="7150019083269396430" id="1">
+        <attvalues>
+          <attvalue for="3" value="alias_of" />
+          <attvalue for="4" value="" />
+          <attvalue for="5" value="alias_of_" />
+        </attvalues>
+      </edge>
+      <edge source="8329590964331007227" target="5911590566581847463" id="2">
+        <attvalues>
+          <attvalue for="3" value="PORTRAYS" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="PORTRAYS_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="5911590566581847463" id="3">
+        <attvalues>
+          <attvalue for="3" value="HAS_CHARACTER" />
+          <attvalue for="4" value="chunk_b920e6349a2d" />
+          <attvalue for="5" value="HAS_CHARACTER_chunk_b920e6349a2d" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="1828748302205740597" id="4">
+        <attvalues>
+          <attvalue for="3" value="HAS_CHARACTER" />
+          <attvalue for="4" value="chunk_b920e6349a2d" />
+          <attvalue for="5" value="HAS_CHARACTER_chunk_b920e6349a2d" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="1828748302205740597" id="5">
+        <attvalues>
+          <attvalue for="3" value="FEATURES_CHARACTER" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="FEATURES_CHARACTER_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="7113792390560476406" id="6">
+        <attvalues>
+          <attvalue for="3" value="AIRED_ON" />
+          <attvalue for="4" value="chunk_b920e6349a2d" />
+          <attvalue for="5" value="AIRED_ON_chunk_b920e6349a2d" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="127684024268212179" id="7">
+        <attvalues>
+          <attvalue for="3" value="FEATURES" />
+          <attvalue for="4" value="chunk_a9bef4b100c5" />
+          <attvalue for="5" value="FEATURES_chunk_a9bef4b100c5" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="4221037901187097061" id="8">
+        <attvalues>
+          <attvalue for="3" value="INCLUDES" />
+          <attvalue for="4" value="chunk_a9bef4b100c5" />
+          <attvalue for="5" value="INCLUDES_chunk_a9bef4b100c5" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="8488541039664135386" id="9">
+        <attvalues>
+          <attvalue for="3" value="INCLUDES" />
+          <attvalue for="4" value="chunk_a9bef4b100c5" />
+          <attvalue for="5" value="INCLUDES_chunk_a9bef4b100c5" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="6209363090629831677" id="10">
+        <attvalues>
+          <attvalue for="3" value="INCLUDES" />
+          <attvalue for="4" value="chunk_a9bef4b100c5" />
+          <attvalue for="5" value="INCLUDES_chunk_a9bef4b100c5" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="3043383999449665833" id="11">
+        <attvalues>
+          <attvalue for="3" value="INCLUDES" />
+          <attvalue for="4" value="chunk_a9bef4b100c5" />
+          <attvalue for="5" value="INCLUDES_chunk_a9bef4b100c5" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="2002534135897460931" id="12">
+        <attvalues>
+          <attvalue for="3" value="RECOMMENDED_WITH" />
+          <attvalue for="4" value="chunk_3947205bfbd4" />
+          <attvalue for="5" value="RECOMMENDED_WITH_chunk_3947205bfbd4" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="1588776035584380798" id="13">
+        <attvalues>
+          <attvalue for="3" value="STARRING" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="STARRING_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="8329590964331007227" id="14">
+        <attvalues>
+          <attvalue for="3" value="STARRING" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="STARRING_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="4129529745985603956" id="15">
+        <attvalues>
+          <attvalue for="3" value="FEATURES_CHARACTER" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="FEATURES_CHARACTER_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="8767717582087046356" id="16">
+        <attvalues>
+          <attvalue for="3" value="BELONGS_TO_GENRE" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="BELONGS_TO_GENRE_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="127684024268212179" target="8767717582087046356" id="17">
+        <attvalues>
+          <attvalue for="3" value="IMPLIES_GENRE" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="IMPLIES_GENRE_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="5911590566581847463" target="1828748302205740597" id="18">
+        <attvalues>
+          <attvalue for="3" value="CHILD_OF" />
+          <attvalue for="4" value="chunk_b920e6349a2d" />
+          <attvalue for="5" value="CHILD_OF_chunk_b920e6349a2d" />
+        </attvalues>
+      </edge>
+      <edge source="5911590566581847463" target="8329590964331007227" id="19">
+        <attvalues>
+          <attvalue for="3" value="PORTRAYED_BY" />
+          <attvalue for="4" value="chunk_b920e6349a2d" />
+          <attvalue for="5" value="PORTRAYED_BY_chunk_b920e6349a2d" />
+        </attvalues>
+      </edge>
+      <edge source="5911590566581847463" target="8767717582087046356" id="20">
+        <attvalues>
+          <attvalue for="3" value="CHARACTER_IN" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="CHARACTER_IN_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="5911590566581847463" target="6592750618317767036" id="21">
+        <attvalues>
+          <attvalue for="3" value="PART_OF" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="PART_OF_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="1828748302205740597" target="1588776035584380798" id="22">
+        <attvalues>
+          <attvalue for="3" value="PORTRAYED_BY" />
+          <attvalue for="4" value="chunk_b920e6349a2d" />
+          <attvalue for="5" value="PORTRAYED_BY_chunk_b920e6349a2d" />
+        </attvalues>
+      </edge>
+      <edge source="1828748302205740597" target="170245209947657665" id="23">
+        <attvalues>
+          <attvalue for="3" value="WORKS_AT" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="WORKS_AT_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="1234904430332071149" target="1828748302205740597" id="24">
+        <attvalues>
+          <attvalue for="3" value="alias_of" />
+          <attvalue for="4" value="" />
+          <attvalue for="5" value="alias_of_" />
+        </attvalues>
+      </edge>
+      <edge source="1234904430332071149" target="127684024268212179" id="25">
+        <attvalues>
+          <attvalue for="3" value="CHARACTER_IN" />
+          <attvalue for="4" value="chunk_3947205bfbd4" />
+          <attvalue for="5" value="CHARACTER_IN_chunk_3947205bfbd4" />
+        </attvalues>
+      </edge>
+      <edge source="2002534135897460931" target="2002534135897460931" id="26">
+        <attvalues>
+          <attvalue for="3" value="MAIN_CHARACTER_OF" />
+          <attvalue for="4" value="chunk_3947205bfbd4" />
+          <attvalue for="5" value="MAIN_CHARACTER_OF_chunk_3947205bfbd4" />
+        </attvalues>
+      </edge>
+      <edge source="2002534135897460931" target="8337002926548059412" id="27">
+        <attvalues>
+          <attvalue for="3" value="RELOCATED_TO" />
+          <attvalue for="4" value="chunk_3947205bfbd4" />
+          <attvalue for="5" value="RELOCATED_TO_chunk_3947205bfbd4" />
+        </attvalues>
+      </edge>
+      <edge source="2002534135897460931" target="8767717582087046356" id="28">
+        <attvalues>
+          <attvalue for="3" value="BELONGS_TO_GENRE" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="BELONGS_TO_GENRE_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="5303333131836015818" target="2002534135897460931" id="29">
+        <attvalues>
+          <attvalue for="3" value="PORTRAYS" />
+          <attvalue for="4" value="chunk_3947205bfbd4" />
+          <attvalue for="5" value="PORTRAYS_chunk_3947205bfbd4" />
+        </attvalues>
+      </edge>
+      <edge source="4129529745985603956" target="127684024268212179" id="30">
+        <attvalues>
+          <attvalue for="3" value="CHARACTER_IN" />
+          <attvalue for="4" value="chunk_3947205bfbd4" />
+          <attvalue for="5" value="CHARACTER_IN_chunk_3947205bfbd4" />
+        </attvalues>
+      </edge>
+      <edge source="4129529745985603956" target="1828748302205740597" id="31">
+        <attvalues>
+          <attvalue for="3" value="FAMILY_RELATION" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="FAMILY_RELATION_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="4129529745985603956" target="170245209947657665" id="32">
+        <attvalues>
+          <attvalue for="3" value="WORKS_AT" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="WORKS_AT_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="810054106290100440" target="810054106290100440" id="33">
+        <attvalues>
+          <attvalue for="3" value="PORTRAYS" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="PORTRAYS_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="810054106290100440" target="8767717582087046356" id="34">
+        <attvalues>
+          <attvalue for="3" value="CHARACTER_IN" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="CHARACTER_IN_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="810054106290100440" target="7263568338038293557" id="35">
+        <attvalues>
+          <attvalue for="3" value="REPRESENTS" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="REPRESENTS_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="810054106290100440" target="5911590566581847463" id="36">
+        <attvalues>
+          <attvalue for="3" value="LOVE_INTEREST_OF" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="LOVE_INTEREST_OF_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="810054106290100440" target="6592750618317767036" id="37">
+        <attvalues>
+          <attvalue for="3" value="PART_OF" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="PART_OF_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="5434808108549796098" target="8767717582087046356" id="38">
+        <attvalues>
+          <attvalue for="3" value="CAST_MEMBER" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="CAST_MEMBER_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="7107233825071009949" target="8767717582087046356" id="39">
+        <attvalues>
+          <attvalue for="3" value="CAST_MEMBER" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="CAST_MEMBER_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="1108406551255846812" target="8767717582087046356" id="40">
+        <attvalues>
+          <attvalue for="3" value="CAST_MEMBER" />
+          <attvalue for="4" value="chunk_d9d86c11c19d" />
+          <attvalue for="5" value="CAST_MEMBER_chunk_d9d86c11c19d" />
+        </attvalues>
+      </edge>
+      <edge source="8767717582087046356" target="8767717582087046356" id="41">
+        <attvalues>
+          <attvalue for="3" value="BELONGS_TO_GENRE" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="BELONGS_TO_GENRE_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="8767717582087046356" target="8767717582087046356" id="42">
+        <attvalues>
+          <attvalue for="3" value="EXEMPLIFIED_BY" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="EXEMPLIFIED_BY_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+      <edge source="8767717582087046356" target="2002534135897460931" id="43">
+        <attvalues>
+          <attvalue for="3" value="EXEMPLIFIED_BY" />
+          <attvalue for="4" value="chunk_6ec124dfe350" />
+          <attvalue for="5" value="EXEMPLIFIED_BY_chunk_6ec124dfe350" />
+        </attvalues>
+      </edge>
+    </edges>
+  </graph>
+</gexf>

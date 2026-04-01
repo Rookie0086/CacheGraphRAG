@@ -1,60 +1,150 @@
 [
   {
-    "query": "What is the relationship between Dr. Sam Griffith and Dr. Rob Griffith?",
-    "answer": "They have a strenuous father-daughter relationship. They also happen to work in the same hospital.",
+    "query": "Which actor plays the lead in The Good Doctor?",
+    "answer": "Shaun Murphy",
     "retrieval": {
       "chunks": [
-        "chunk_523a9298f524",
-        "chunk_20e0d60558da",
-        "chunk_6d1a4296c5be"
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_3947205bfbd4"
       ],
-      "embedding": {
-        "embedding_hits": []
-      },
       "memory": [
         {
           "chunks": [
-            "chunk_523a9298f524",
-            "chunk_20e0d60558da"
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_3947205bfbd4"
           ],
           "matched_entities": [
             {
-              "uid": 5200229573555720232,
-              "name": "Dr. Sam Griffith",
-              "score": 0.8721890449523926
+              "uid": 2002534135897460931,
+              "name": "The Good Doctor",
+              "score": 0.9060695767402649
             },
             {
-              "uid": 8938217545023872475,
-              "name": "Sam Griffith",
-              "score": 0.8551797270774841
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.865821361541748
             },
             {
-              "uid": 6379484192792921089,
-              "name": "hospital",
-              "score": 0.8167407512664795
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.8341233730316162
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "What is Malcolm's romantic relationship to Sam?",
+    "answer": "Love interest",
+    "retrieval": {
+      "chunks": [
+        "chunk_d9d86c11c19d",
+        "chunk_6ec124dfe350",
+        "chunk_b920e6349a2d",
+        "chunk_3947205bfbd4"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 810054106290100440,
+              "name": "Malcolm Kingsley",
+              "score": 0.8132176995277405
+            },
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.76195228099823
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.759297251701355
             }
           ]
         },
         {
           "chunks": [
-            "chunk_6d1a4296c5be",
-            "chunk_523a9298f524"
+            "chunk_6ec124dfe350",
+            "chunk_3947205bfbd4",
+            "chunk_b920e6349a2d"
           ],
           "matched_entities": [
             {
-              "uid": 3627085421232015802,
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.8284968137741089
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7652554512023926
+            },
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.7557460069656372
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [],
+          "matched_entities": []
+        },
+        {
+          "chunks": [],
+          "matched_entities": []
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who replaced Rob Griffith as department head?",
+    "answer": "Freddie Highmore",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
               "name": "Dr. Rob Griffith",
-              "score": 0.8601188659667969
+              "score": 0.927629292011261
             },
             {
-              "uid": 6584212265433549629,
-              "name": "Jason Isaacs",
-              "score": 0.8578968048095703
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.8026313185691833
             },
             {
-              "uid": 5200229573555720232,
-              "name": "Dr. Sam Griffith",
-              "score": 0.8164117336273193
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7472806572914124
             }
           ]
         }
@@ -62,30 +152,735 @@
       "persistent": [
         {
           "chunks": [
-            "chunk_523a9298f524"
+            "chunk_b920e6349a2d",
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350"
           ],
           "matched_entities": [
             {
-              "uid": 5200229573555720232,
-              "name": "Dr. Sam Griffith",
-              "score": 0.8721890449523926
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.927629292011261
             },
             {
-              "uid": 6379484192792921089,
-              "name": "hospital",
-              "score": 0.8167407512664795
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.8026313185691833
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7472806572914124
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "How is Rob Griffith's temper described?",
+    "answer": "Jason Isaacs",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.8867797255516052
+            },
+            {
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.7685515284538269
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7596673369407654
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_b920e6349a2d",
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.8867797255516052
+            },
+            {
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.7685515284538269
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7596673369407654
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who plays the character Malcolm Kingsley?",
+    "answer": "Hot-headed",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 810054106290100440,
+              "name": "Malcolm Kingsley",
+              "score": 0.8986632227897644
+            },
+            {
+              "uid": 5303333131836015818,
+              "name": "Freddie Highmore",
+              "score": 0.7652064561843872
+            },
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.7382144331932068
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 810054106290100440,
+              "name": "Malcolm Kingsley",
+              "score": 0.8986632227897644
+            },
+            {
+              "uid": 5303333131836015818,
+              "name": "Freddie Highmore",
+              "score": 0.7652064561843872
+            },
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.7382144331932068
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What previous procedural show did Sophia Bush headline?",
+    "answer": "Heart surgeon",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8329590964331007227,
+              "name": "Sophia Bush",
+              "score": 0.8943986892700195
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.846537709236145
+            },
+            {
+              "uid": 7150019083269396430,
+              "name": "Bush",
+              "score": 0.833041787147522
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8329590964331007227,
+              "name": "Sophia Bush",
+              "score": 0.8943986892700195
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.846537709236145
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What is Jason Isaacs' real-world nationality?",
+    "answer": "Heart surgery",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_3947205bfbd4",
+        "chunk_b920e6349a2d",
+        "chunk_d9d86c11c19d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_3947205bfbd4",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.9015995264053345
+            },
+            {
+              "uid": 5303333131836015818,
+              "name": "Freddie Highmore",
+              "score": 0.8282150626182556
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.814193606376648
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_3947205bfbd4",
+            "chunk_6ec124dfe350"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.9015995264053345
+            },
+            {
+              "uid": 5303333131836015818,
+              "name": "Freddie Highmore",
+              "score": 0.8282150626182556
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.814193606376648
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What American network broadcasts The Good Doctor?",
+    "answer": "\"Damnit\"",
+    "retrieval": {
+      "chunks": [
+        "chunk_d9d86c11c19d",
+        "chunk_6ec124dfe350",
+        "chunk_b920e6349a2d",
+        "chunk_3947205bfbd4"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 7113792390560476406,
+              "name": "CBS",
+              "score": 0.7813984155654907
+            },
+            {
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.7306042909622192
+            },
+            {
+              "uid": 7263568338038293557,
+              "name": "Wealthy Black Americans",
+              "score": 0.7259557247161865
             }
           ]
         },
         {
           "chunks": [
-            "chunk_523a9298f524"
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_3947205bfbd4"
           ],
           "matched_entities": [
             {
-              "uid": 5200229573555720232,
-              "name": "Dr. Sam Griffith",
-              "score": 0.8164117336273193
+              "uid": 2002534135897460931,
+              "name": "The Good Doctor",
+              "score": 0.9016226530075073
+            },
+            {
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.859573245048523
+            },
+            {
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.828258752822876
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 7113792390560476406,
+              "name": "CBS",
+              "score": 0.7813984155654907
+            },
+            {
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.7306042909622192
+            },
+            {
+              "uid": 7263568338038293557,
+              "name": "Wealthy Black Americans",
+              "score": 0.7259557247161865
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_3947205bfbd4",
+            "chunk_d9d86c11c19d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2002534135897460931,
+              "name": "The Good Doctor",
+              "score": 0.9016226530075073
+            },
+            {
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.859573245048523
+            },
+            {
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.828258752822876
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who stars alongside Sophia Bush in Good Sam?",
+    "answer": "An accident",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d",
+        "chunk_a9bef4b100c5",
+        "chunk_3947205bfbd4"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8329590964331007227,
+              "name": "Sophia Bush",
+              "score": 0.9083943367004395
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.8365753889083862
+            },
+            {
+              "uid": 7150019083269396430,
+              "name": "Bush",
+              "score": 0.8095842599868774
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d",
+            "chunk_a9bef4b100c5"
+          ],
+          "matched_entities": [
+            {
+              "uid": 127684024268212179,
+              "name": "Good Sam",
+              "score": 0.9414675235748291
+            },
+            {
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.8969265818595886
+            },
+            {
+              "uid": 4221037901187097061,
+              "name": "heart surgery",
+              "score": 0.841182291507721
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 8329590964331007227,
+              "name": "Sophia Bush",
+              "score": 0.9083943367004395
+            },
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.8365753889083862
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_3947205bfbd4",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 127684024268212179,
+              "name": "Good Sam",
+              "score": 0.9414675235748291
+            },
+            {
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.8969265818595886
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Name one of the secondary cast members.",
+    "answer": "Samantha Griffith",
+    "retrieval": {
+      "chunks": [],
+      "memory": [],
+      "persistent": []
+    }
+  },
+  {
+    "query": "What event caused Rob Griffith to lose his title?",
+    "answer": "ABC",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.885312557220459
+            },
+            {
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.7707924246788025
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7511698007583618
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_b920e6349a2d",
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.885312557220459
+            },
+            {
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.7707924246788025
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7511698007583618
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "Who is the main character of The Good Doctor?",
+    "answer": "Chicago P.D.",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_3947205bfbd4",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_3947205bfbd4"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2002534135897460931,
+              "name": "The Good Doctor",
+              "score": 0.9060695767402649
+            },
+            {
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.865821361541748
+            },
+            {
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.8341233730316162
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.7708317041397095
+            },
+            {
+              "uid": 1108406551255846812,
+              "name": "Davi Santos",
+              "score": 0.7622953057289124
+            },
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.760161280632019
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_3947205bfbd4",
+            "chunk_d9d86c11c19d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 2002534135897460931,
+              "name": "The Good Doctor",
+              "score": 0.9060695767402649
+            },
+            {
+              "uid": 8767717582087046356,
+              "name": "Medical Drama",
+              "score": 0.865821361541748
+            },
+            {
+              "uid": 4129529745985603956,
+              "name": "Sam",
+              "score": 0.8341233730316162
+            }
+          ]
+        },
+        {
+          "chunks": [
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 5434808108549796098,
+              "name": "Skye P. Marshall",
+              "score": 0.7708317041397095
+            },
+            {
+              "uid": 1108406551255846812,
+              "name": "Davi Santos",
+              "score": 0.7622953057289124
+            },
+            {
+              "uid": 1588776035584380798,
+              "name": "Isaacs",
+              "score": 0.760161280632019
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "query": "What is Dr. Rob Griffith's medical specialty?",
+    "answer": "English",
+    "retrieval": {
+      "chunks": [
+        "chunk_6ec124dfe350",
+        "chunk_d9d86c11c19d",
+        "chunk_b920e6349a2d"
+      ],
+      "memory": [
+        {
+          "chunks": [
+            "chunk_6ec124dfe350",
+            "chunk_d9d86c11c19d",
+            "chunk_b920e6349a2d"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.9221087098121643
+            },
+            {
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.8303256630897522
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7787171602249146
+            }
+          ]
+        }
+      ],
+      "persistent": [
+        {
+          "chunks": [
+            "chunk_b920e6349a2d",
+            "chunk_d9d86c11c19d",
+            "chunk_6ec124dfe350"
+          ],
+          "matched_entities": [
+            {
+              "uid": 1828748302205740597,
+              "name": "Dr. Rob Griffith",
+              "score": 0.9221087098121643
+            },
+            {
+              "uid": 5911590566581847463,
+              "name": "Samantha Griffith",
+              "score": 0.8303256630897522
+            },
+            {
+              "uid": 1234904430332071149,
+              "name": "Rob",
+              "score": 0.7787171602249146
             }
           ]
         }

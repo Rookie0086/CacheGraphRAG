@@ -1,4 +1,5 @@
 import asyncio
+import time
 import json
 import math
 import os
@@ -183,12 +184,25 @@ class MemoryGraphManager:
         promoted_nodes_dict = {}
 
         def _normalize_uid(uid):
-            if isinstance(uid, int):
+            if uid is None:
+                return None
+            return str(uid).strip()
+
+        def _coerce_graph_uid(uid):
+            if uid is None:
+                return None
+            if self.graph.has_node(uid):
                 return uid
+            uid_str = str(uid)
+            if self.graph.has_node(uid_str):
+                return uid_str
             try:
-                return int(uid)
+                uid_int = int(uid)
             except (ValueError, TypeError):
-                return uid
+                return None
+            if self.graph.has_node(uid_int):
+                return uid_int
+            return None
 
         def _get_chunk_entity_ids():
             if not self.chunk_vector_store:
@@ -201,10 +215,12 @@ class MemoryGraphManager:
 
         entity_ids = _get_chunk_entity_ids()
         if entity_ids:
-            node_set = set(entity_ids)
-            for uid in list(node_set):
-                if self.graph.has_node(uid):
-                    promoted_nodes_dict[uid] = self.graph.nodes[uid]
+            node_set = set()
+            for uid in entity_ids:
+                uid_key = _coerce_graph_uid(uid)
+                if uid_key is not None:
+                    node_set.add(uid_key)
+                    promoted_nodes_dict[uid_key] = self.graph.nodes[uid_key]
 
             seen_edges = set()
             for uid in list(node_set):
@@ -232,7 +248,7 @@ class MemoryGraphManager:
                         promoted_nodes_dict[u] = self.graph.nodes[u]
                     if v not in promoted_nodes_dict:
                         promoted_nodes_dict[v] = self.graph.nodes[v]
-
+            print(f"Chunk {chunk_id} has {len(promoted_nodes_dict)} nodes and {len(promoted_edges)} edges promoted.")
             return {
                 "chunk_id": chunk_id,
                 "nodes": promoted_nodes_dict,
@@ -253,7 +269,7 @@ class MemoryGraphManager:
                     promoted_nodes_dict[u] = self.graph.nodes[u]
                 if v not in promoted_nodes_dict:
                     promoted_nodes_dict[v] = self.graph.nodes[v]
-
+        print("Use edge-based promotion for chunk", chunk_id)
         return {
             "chunk_id": chunk_id,
             "nodes": promoted_nodes_dict,
@@ -277,17 +293,20 @@ class MemoryGraphManager:
 
             # 1. 写入节点
             for uid, data in nodes.items():
+                # print(f"Upserting node {uid} to NebulaGraph with name: {data.get('name', '')}, type: {data.get('type', '')}, source_chunks: {_format_chunks(data.get('source_chunks', ''))}")
+                source_chunks = data.get("source_chunks") or data.get("source_chunk")
                 self.persistent_graph.upsert_vertex(
                     vertex_id=uid,
                     properties={
                         "name": data.get("name", ""),
                         "type": data.get("type", ""),
-                        "source_chunks": _format_chunks(data.get("source_chunks"))
+                        "source_chunk": _format_chunks(source_chunks)
                     }
                 )
 
             # 2. 写入边
             for edge in edges:
+                # print(f"Upserting edge from {edge['src']} to {edge['tgt']} with relation: {edge['relation']} and source_chunk: {chunk_id}")
                 self.persistent_graph.upsert_edge(
                     src_id=edge["src"],
                     tgt_id=edge["tgt"],
@@ -365,20 +384,34 @@ class AsyncEntityResolver:
         suffixes = r'\b(inc|corp|co|ltd|llc|group|foundation|incorporated|corporation|limited)\b'
         
         # 移除后缀及可能存在的标点（如 Apple, Inc. -> apple）
-        name = re.sub(rf'[,\.\s]+({suffixes})[,\.\s]*', '', name)
-        name = re.sub(rf'[,\.\s]+$', '', name) # 清理结尾残余标点
-        
-        return name.strip()
+        name = re.sub(rf'[,.\s]+({suffixes})[,.\s]*', '', name)
+        name = re.sub(rf'[,.\s]+$', '', name) # 清理结尾残余标点
+
+        # 标准化标点为空格并折叠空白
+        name = re.sub(r"[^a-z0-9\s]", " ", name)
+        name = re.sub(r"\s+", " ", name).strip()
+        return name
+
+    # 在 _normalize_name 的基础上再“切分成 token 列表”，并去掉称谓
+    def _tokenize_name(self, name: str) -> List[str]:
+        if not name:
+            return []
+        honorifics = {"dr", "mr", "mrs", "ms", "prof", "sir", "madam"}
+        tokens = self._normalize_name(name).split()
+        tokens = [t for t in tokens if t and t not in honorifics and len(t) > 1]
+        return tokens
 
     def _is_abbreviation_or_nickname(self, name1: str, name2: str) -> bool:
         """
         判断两个字符串是否互为缩写、简称或高相似度变形
         """
-        n1 = self._normalize_name(name1)
-        n2 = self._normalize_name(name2)
+        n1 = " ".join(self._tokenize_name(name1))
+        n2 = " ".join(self._tokenize_name(name2))
         
-        if not n1 or not n2: return False
-        if n1 == n2: return True
+        if not n1 or not n2:
+            return False
+        if n1 == n2:
+            return True
 
         # 1. 首字母缩写判断 (例如: "IBM" vs "International Business Machines")
         def check_acronym(short_str, long_str):
@@ -397,6 +430,23 @@ class AsyncEntityResolver:
         long_tokens = long.split()
         if len(short_tokens) == len(long_tokens):
             if all(l_t.startswith(s_t) for s_t, l_t in zip(short_tokens, long_tokens)):
+                return True
+
+        # 2.1 单个姓氏或名字匹配 (例如: "Bush" vs "Sophia Bush")
+        if len(short_tokens) == 1 and len(long_tokens) >= 2:
+            token = short_tokens[0]
+            if token == long_tokens[-1]:
+                return True
+            if token in long_tokens and len(token) >= 3:
+                return True
+
+        # 2.2 子序列匹配 (例如: "Rob Griffith" vs "Dr Rob Griffith")
+        if len(short_tokens) < len(long_tokens) and short_tokens:
+            pos = 0
+            for tok in long_tokens:
+                if pos < len(short_tokens) and tok == short_tokens[pos]:
+                    pos += 1
+            if pos == len(short_tokens):
                 return True
 
         # 3. 编辑距离相似度 (模糊匹配)
@@ -450,22 +500,22 @@ class AsyncEntityResolver:
 
         return 0.5 * token_sim + 0.5 * cos_sim
 
-    # def _is_alias_pair(self, short_name: str, long_name: str) -> bool:
-    #     short_tokens = self._normalize_name(short_name)
-    #     long_tokens = self._normalize_name(long_name)
-    #     if not short_tokens or not long_tokens:
-    #         return False
-    #     if short_tokens == long_tokens:
-    #         return False
-    #     if len(short_tokens) == 1:
-    #         token = short_tokens[0]
-    #         return any(t.startswith(token) and t != token for t in long_tokens)
-    #     if len(short_tokens) != len(long_tokens):
-    #         return False
-    #     for idx, token in enumerate(short_tokens):
-    #         if not long_tokens[idx].startswith(token):
-    #             return False
-    #     return True
+    def _is_alias_pair(self, short_name: str, long_name: str) -> bool:
+        short_tokens = self._normalize_name(short_name)
+        long_tokens = self._normalize_name(long_name)
+        if not short_tokens or not long_tokens:
+            return False
+        if short_tokens == long_tokens:
+            return False
+        if len(short_tokens) == 1:
+            token = short_tokens[0]
+            return any(t.startswith(token) and t != token for t in long_tokens)
+        if len(short_tokens) != len(long_tokens):
+            return False
+        for idx, token in enumerate(short_tokens):
+            if not long_tokens[idx].startswith(token):
+                return False
+        return True
 
     def _maybe_add_edge(self, src_uid: int, dst_uid: int, src_name: str = "", dst_name: str = "", relation_type: str = "") -> None:
         if not self.memory_graph:
@@ -473,28 +523,28 @@ class AsyncEntityResolver:
         if src_uid is None or dst_uid is None:
             return
         if src_name:
-            self.memory_graph.add_node(src_uid, name=src_name, type="", source_chunk=relation_type)
+            self.memory_graph.add_node(src_uid, name=src_name, type="", source_chunk="")
         if dst_name:
-            self.memory_graph.add_node(dst_uid, name=dst_name, type="", source_chunk=relation_type)
+            self.memory_graph.add_node(dst_uid, name=dst_name, type="", source_chunk="")
         self.memory_graph.add_edge(
             src_uid,
             dst_uid,
             relation_type=relation_type,
-            source_chunk=relation_type,
+            source_chunk="",
         )
 
     def _make_uid(self) -> int:
         # Keep uid consistent with INT64 schema.
         return uuid.uuid4().int % (2**63 - 1)
 
-    def _search_milvus(self, vector, search_params):
+    def _search_milvus(self, vector, search_params, limit=5):
         if not self.milvus_db.db:
             self.milvus_db.load()
         return self.milvus_db.db.search(
             data=[vector],
             anns_field="vec",
             param=search_params,
-            limit=1,
+            limit=limit,
             output_fields=["uid", "name", "type", "desc"],
             consistency_level="Strong",
         )
@@ -531,11 +581,32 @@ class AsyncEntityResolver:
         # 3. 在 Milvus 中进行向量检索 (使用 to_thread 防止同步阻塞)
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         
-        results = await asyncio.to_thread(self._search_milvus, vector, search_params)
-
         # 4. 判定逻辑
+        results = await asyncio.to_thread(self._search_milvus, vector, search_params, 5)
         if results and len(results[0]) > 0:
-            top_match = results[0][0]
+            hits = results[0]
+            # top‑k 命中后优先选“同名+同类型”的候选
+            def _name_type_match(hit) -> bool:
+                return (
+                    self._normalize_name(entity_name) == self._normalize_name(hit.entity.get("name"))
+                    and self._normalize_type(entity_type) == self._normalize_type(hit.entity.get("type"))
+                )
+
+            exact_hit = next((hit for hit in hits if _name_type_match(hit)), None)
+            alias_hit = next(
+                (
+                    hit
+                    for hit in hits
+                    if self._normalize_type(entity_type) == self._normalize_type(hit.entity.get("type"))
+                    and (
+                        self._is_abbreviation_or_nickname(entity_name, hit.entity.get("name"))
+                        or self._is_abbreviation_or_nickname(hit.entity.get("name"), entity_name)
+                    )
+                ),
+                None,
+            )
+
+            top_match = exact_hit or alias_hit or hits[0]
             exist_uid = top_match.entity.get("uid")
             exist_name = top_match.entity.get("name")
             exist_type = top_match.entity.get("type")
@@ -685,7 +756,7 @@ class HybridRetriever:
                 data["source_chunk"] = ",".join(str(v) for v in data["source_chunk"])
         nx.write_gexf(export_g, path)
 
-    def retrieve_from_memory_graph(self, entity_name: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_memory_graph(self, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
         if not self.memory_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -693,7 +764,7 @@ class HybridRetriever:
 
         graph = self.memory_graph.graph
         vector_store = MilvusDB(db_name="entity_index", overwrite=False)
-        text_to_embed = f"Entity: {entity_name}. Description: {entity_desc}"
+        text_to_embed = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
         entity_emb = vector_store.embed_model.get_embedding(text_to_embed)
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         results = self._search_milvus(vector_store, entity_emb, search_params, limit=top_entities)
@@ -709,6 +780,7 @@ class HybridRetriever:
         matched_id_set = {str(uid) for uid in matched_ids if uid is not None}
         print(f"Matched entity UIDs: {matched_id_set}")
         node_set = set()
+        self.memory_graph._rebuild_id_index()  # Ensure ID index is up-to-date before fetching nodes
         for mid in matched_id_set:
             node_set.update(self.memory_graph.get_nodes_by_id(mid))
         print(f"Initial matched nodes in graph: {node_set}")
@@ -717,7 +789,7 @@ class HybridRetriever:
             node_set.update(graph.successors(uid))
         print(f"Expanded node set with neighbors: {node_set}")
         subgraph = graph.subgraph(node_set).copy()
-        self.save_graph_gexf(f"subgraph/temp_subgraph_{entity_name}.gexf", subgraph)  # Debug: export subgraph to inspect structure 
+        # self.save_graph_gexf(f"subgraph/temp_subgraph_{entity_name}.gexf", subgraph)  # Debug: export subgraph to inspect structure 
         
         counter = Counter()
         for _, data in subgraph.nodes(data=True):
@@ -740,7 +812,7 @@ class HybridRetriever:
             "matched_entities": matched,
         }
 
-    def retrieve_from_persistent_graph(self, entity_name: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_persistent_graph(self, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
         if not self.persistent_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -748,7 +820,7 @@ class HybridRetriever:
 
         graph = self.persistent_graph
         vector_store = MilvusDB(db_name="entity_index", overwrite=False)
-        text_to_embed = f"Entity: {entity_name}. Description: {entity_desc}"
+        text_to_embed = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
         entity_emb = vector_store.embed_model.get_embedding(text_to_embed)
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         results = self._search_milvus(vector_store, entity_emb, search_params, limit=top_entities)
@@ -843,16 +915,16 @@ class HybridRetriever:
         return entities
 
     def hybrid_retrieve(self, query: str, topk: int = 5, top_entities: int = 5, top_chunks: int = 5):
-        embedding_res = self.retrieve_from_embedding(query, topk=topk)
+        # embedding_res = self.retrieve_from_embedding(query, topk=topk)
         raw_response = self.llm.complete(prompt=prompt_extract_entities_str.format(context=query))
         extracted_entities = self._parse_entities_from_llm(raw_response)
         memory_res = []
         persistent_res = []
         # TODO: 考虑异步并发地检索多个实体以提升效率
         for ent in extracted_entities:
-            memory_res.append(self.retrieve_from_memory_graph(ent["id"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
-            # TODO: 内存图中找到了相关实体后，是否还需要继续在持久化图中检索？
-            persistent_res.append(self.retrieve_from_persistent_graph(ent["id"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
+            memory_res.append(self.retrieve_from_memory_graph(ent["id"], ent["type"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
+            # TODO: 内存图中找到了相关实体后，是否还需要继续在持久化图中检索？(冲突解决策略)
+            persistent_res.append(self.retrieve_from_persistent_graph(ent["id"], ent["type"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
 
         chunk_ids = []
         for res in memory_res:
@@ -861,14 +933,14 @@ class HybridRetriever:
             # TODO: 晋升改为离线托管
             # 根据内存图检索结果晋升达到门槛的 chunk 相关的子图
             
-            # access_results = []
-            # for cid in candidate_chunk_ids:
-            #     triggered, data = self.memory_graph.access_chunk(cid)
-            #     if triggered:
-            #         access_results.append(data)
-            # if access_results:
-            #     self.memory_graph.write_to_persistent_graph(access_results)
-            #     print("已晋升的 chunk_id 列表:", [data["chunk_id"] for data in access_results])
+            access_results = []
+            for cid in candidate_chunk_ids:
+                triggered, data = self.memory_graph.access_chunk(cid)
+                if triggered:
+                    access_results.append(data)
+            if access_results:
+                self.memory_graph.write_to_persistent_graph(access_results)
+                print("已晋升的 chunk_id 列表:", [data["chunk_id"] for data in access_results])
 
         for res in persistent_res:
             chunk_ids.extend(res.get("chunks", []))
@@ -884,7 +956,7 @@ class HybridRetriever:
 
         return {
             "chunks": unique_chunks,
-            "embedding": embedding_res,
+            # "embedding": embedding_res,
             "memory": memory_res,
             "persistent": persistent_res,
         }
@@ -992,6 +1064,7 @@ class DocumentIngestionPipeline:
                     chunk_id=chunk_id, 
                     vector=chunk_vector, 
                     entity_uids=[ent["uid"] for ent in aligned_entities.values()],
+                    chunk_text=text,
                 )
                 print(f"Chunk {chunk_id} 已加入 Milvus 数据流。")
                 # self.vector_store.db.flush()  # 确保数据可见
@@ -1065,11 +1138,11 @@ class DocumentIngestionPipeline:
 # ==========================================
 
 async def run_tests():
-    # 初始化你的文档文本 (使用你提供的 example.txt 的片段)
-    # with open("data/example.txt", "r") as f:
-    #     document_text = f.read()
+    # # 初始化你的文档文本 (使用你提供的 example.txt 的片段)
+    with open("data/example.txt", "r") as f:
+        document_text = f.read()
 
-    # print("🚀 --- [阶段 1: 文档入库处理 (Ingestion)] ---")
+    print("🚀 --- [阶段 1: 文档入库处理 (Ingestion)] ---")
     mem_graph = MemoryGraphManager(promotion_threshold=2) # 测试环境阈值设低一点：2次
     resolver = AsyncEntityResolver(
         embedding_func=llm.embed_model.get_embedding_async,
@@ -1091,47 +1164,42 @@ async def run_tests():
     # except MilvusException as e:
     #     print(f"Warning: entity_index flush failed: {e}")
 
-    try:
-        print(resolver.milvus_client.get_collection_stats("entity_index"))
-    except MilvusException as e:
-        print(f"Warning: Failed to read collection stats: {e}")
+    mem_graph.show_status()
+    mem_graph.save_graph_graphml("subgraph/memory_graph_4.graphml")
+    mem_graph.save_graph_gexf("subgraph/memory_graph_4.gexf")
+    # mem_graph.load_graph_gexf("subgraph/memory_graph_4.gexf")
+    # mem_graph.show_status()
+    print("\n🚀 --- [阶段 2: 检索与子图晋升 (Retrieval & Promotion)] ---")
+    
+    qa_file = "data/example_qa.json"
+    if os.path.exists(qa_file):
+        data = read_json(qa_file)
+        print(f"Loaded {len(data)} QA pairs from {qa_file}.")
+    else:
+        data = []
+    
+    querys = set([item["query"] for item in data])
+    answers = set([item["answer"] for item in data])
+    print(f"Unique Queries: {len(querys)}, Unique Answers: {len(answers)}")
+    assert len(querys) == len(answers), "QA pairs should be 1-to-1."
+    retriever = HybridRetriever(
+        # vector_store=resolver.milvus_db, 
+        memory_graph=mem_graph, 
+        llm=llm, 
+        chunk_registry=pipeline.chunk_registry
+    )
+    data = []
+    for i,(query, answer) in tqdm(enumerate(zip(querys, answers)), total=len(querys)):
+        print(f"\n🔍 Query {i+1}: {query}")
+        retrieval_res = retriever.hybrid_retrieve(query, topk=2, top_entities=3, top_chunks=3)
+        data.append({
+            "query": query,
+            "answer": answer,
+            "retrieval": retrieval_res,
+        })
+        save_to_json(file_path="data/retrieval_results.json", data=data, indent=2, info=False)
 
     mem_graph.show_status()
-    mem_graph.save_graph_graphml("subgraph/memory_graph_3.graphml")
-    mem_graph.save_graph_gexf("subgraph/memory_graph_3.gexf")
-    # mem_graph.load_graph_gexf("subgraph/memory_graph.gexf")
-    # mem_graph.show_status()
-    # print("\n🚀 --- [阶段 2: 检索与子图晋升 (Retrieval & Promotion)] ---")
-    
-    # qa_file = "data/example_qa.json"
-    # if os.path.exists(qa_file):
-    #     data = read_json(qa_file)
-    #     print(f"Loaded {len(data)} QA pairs from {qa_file}.")
-    # else:
-    #     data = []
-    
-    # querys = set([item["query"] for item in data])
-    # answers = set([item["answer"] for item in data])
-    # print(f"Unique Queries: {len(querys)}, Unique Answers: {len(answers)}")
-    # assert len(querys) == len(answers), "QA pairs should be 1-to-1."
-    # retriever = HybridRetriever(
-    #     # vector_store=resolver.milvus_db, 
-    #     memory_graph=mem_graph, 
-    #     llm=llm, 
-    #     chunk_registry=pipeline.chunk_registry
-    # )
-    # data = []
-    # for i,(query, answer) in tqdm(enumerate(zip(querys, answers)), total=len(querys)):
-    #     print(f"\n🔍 Query {i+1}: {query}")
-    #     retrieval_res = retriever.hybrid_retrieve(query, topk=2, top_entities=3, top_chunks=3)
-    #     data.append({
-    #         "query": query,
-    #         "answer": answer,
-    #         "retrieval": retrieval_res,
-    #     })
-    #     save_to_json(file_path="data/retrieval_results.json", data=data, indent=2, info=False)
-
-    # mem_graph.show_status()
 
 if __name__ == "__main__":
     asyncio.run(run_tests())
