@@ -1,5 +1,7 @@
 import json
 import os
+import math
+import random
 from typing import List
 
 from transformers import (
@@ -50,6 +52,64 @@ def concat_strings_in_list(input_list):
     assert all(isinstance(item, str) for item in input_list)
     return input_list
 
+def processdata(instance, noise_rate, passage_num, filename, correct_rate = 0):
+    query = instance['query']
+    ans = instance['answer']
+
+    neg_num = math.ceil(passage_num * noise_rate)
+    pos_num = passage_num - neg_num
+
+    if '_int' in filename:
+        for i in instance['positive']:
+            random.shuffle(i)
+        print(len(instance['positive']))
+        docs = [i[0] for i in instance['positive']]
+        if len(docs) < pos_num:
+            maxnum = max([len(i) for i in instance['positive']])
+            for i in range(1,maxnum):
+                for j in instance['positive']:
+                    if len(j) > i:
+                        docs.append(j[i])
+                        if len(docs) == pos_num:
+                            break
+                if len(docs) == pos_num:
+                    break
+        neg_num = passage_num - len(docs)
+        if neg_num > 0:
+            negative = instance['negative'][:neg_num]
+            docs += negative
+    elif '_fact' in filename:
+        correct_num = math.ceil(passage_num * correct_rate)
+        pos_num = passage_num - neg_num - correct_num
+        indexs = list(range(len(instance['positive'])))
+        selected = random.sample(indexs,min(len(indexs),pos_num))
+        docs = [instance['positive_wrong'][i] for i in selected]
+        remain = [i for i in indexs if i not in selected]
+        if correct_num > 0 and len(remain) > 0:
+            docs += [instance['positive'][i] for i in random.sample(remain,min(len(remain),correct_num))]
+        if neg_num > 0:
+            docs += instance['negative'][:neg_num]
+    else:
+        if noise_rate == 1:
+            neg_num = passage_num
+            pos_num = 0
+        else:
+            if neg_num > len(instance['negative']):
+                neg_num = len(instance['negative'])
+                pos_num = passage_num - neg_num
+            elif pos_num > len(instance['positive']):
+                pos_num = len(instance['positive'])
+                neg_num = passage_num - pos_num
+        
+
+        positive = instance['positive'][:pos_num]
+        negative = instance['negative'][:neg_num]
+
+        docs = positive + negative
+
+    random.shuffle(docs)
+    
+    return query, ans, docs
 
 def get_rgb_info(file="en", chunk_size=512):
     data_file = os.path.join(RGB_DATAPATH, f"{file}.json")
@@ -73,7 +133,10 @@ def get_rgb_info(file="en", chunk_size=512):
                     compact_string(pos_texts + neg_texts, chunk_size=chunk_size)
                 )
                 # print(len(texts[-1]))
-
+            elif file == "en_refine":
+                pos_text = " ".join(concat_strings_in_list(instance["positive"]))
+                neg_text = " ".join(concat_strings_in_list(instance["negative"]))
+                texts.append(pos_text + "\n" + neg_text)
             else:
                 pos_text = " ".join(concat_strings_in_list(instance["positive"]))
                 texts.append(pos_text)

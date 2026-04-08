@@ -26,7 +26,7 @@ class AsyncEntityResolver:
     def __init__(
         self,   
         embedding_func,
-        collection_name="entity_index", 
+        collection_name="entity_index_example", 
         threshold=0.85,
         memory_graph=None,
     ):

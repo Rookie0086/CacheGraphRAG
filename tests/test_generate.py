@@ -56,7 +56,7 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
             backend="ollama",
             model="llama3:latest",
             base_url="http://localhost:11434",
-            max_tokens=256,
+            max_tokens=512,
             timeout=1000,
         )
 
@@ -184,3 +184,15 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	run_generate(args.dataset, args.start, args.end, args.backend)
 # python -m tests.test_generate --dataset rgb_en --start 0 --end 20 --backend openai
+# python -m scripts.merge_retrieval_results \
+#   --inputs data/retrieval_results_rgb_en_0_30.json \
+#            data/retrieval_results_rgb_en_30_60.json \
+#            data/retrieval_results_rgb_en_60_90.json \
+#            data/retrieval_results_rgb_en_90_120.json \
+# 		   data/retrieval_results_rgb_en_120_150.json \
+# 		   data/retrieval_results_rgb_en_150_180.json \
+# 		   data/retrieval_results_rgb_en_180_210.json \
+# 		   data/retrieval_results_rgb_en_210_240.json \
+# 		   data/retrieval_results_rgb_en_240_270.json \
+# 		   data/retrieval_results_rgb_en_270_300.json \
+#   --output data/retrieval_results_rgb_en_0_300.json

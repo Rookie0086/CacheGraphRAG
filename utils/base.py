@@ -61,11 +61,11 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
 
 
 def get_project_dir():
-    if os.environ.get("DEPCACHE_BASE_DIR"):
-        depcache_dir = os.environ.get("DEPCACHE_BASE_DIR")
+    if os.environ.get("PROJECT_BASE_DIR"):
+        depcache_dir = os.environ.get("PROJECT_BASE_DIR")
     else:
         home_dir = os.path.expanduser("~")
-        depcache_dir = os.path.join(home_dir, "DepCache")
+        depcache_dir = os.path.join(home_dir, "KGUPDATER")
 
     return depcache_dir
 
@@ -255,7 +255,11 @@ def checkanswer(prediction, ground_truth, verbose=False):
     >>> checkanswer("cat and mat", [["cat"], ["MAT", "mat"]])
     [1, 1]
     """
-    prediction = prediction.lower()
+    def _normalize_answer(text: str) -> str:
+        normalized = text.lower().strip()
+        return normalized.rstrip("。.!?！？,，;；:：")
+
+    prediction = _normalize_answer(prediction)
     if not isinstance(ground_truth, list):
         ground_truth = [ground_truth]
     labels = []
@@ -263,13 +267,13 @@ def checkanswer(prediction, ground_truth, verbose=False):
         flag = True
         if isinstance(instance, list):
             flag = False
-            instance = [i.lower() for i in instance]
+            instance = [_normalize_answer(i) for i in instance]
             for i in instance:
                 if i in prediction:
                     flag = True
                     break
         else:
-            instance = instance.lower()
+            instance = _normalize_answer(instance)
             if instance not in prediction:
                 flag = False
         labels.append(int(flag))

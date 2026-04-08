@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import os
 import time
 from abc import ABC, abstractmethod
@@ -47,7 +48,7 @@ class EmbeddingEnv:
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.batch_size = batch_size
 
-        print(f"Loading model {self.model_name} to {self.device} ...")
+        # print(f"Loading model {self.model_name} to {self.device} ...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
         self.model.to(self.device)
@@ -682,6 +683,12 @@ class SGLangEnv(BaseLLMEnv):
 
 class LLMEnv:
 
+    _GLOBAL_RETRY_COUNT = 0
+    _GLOBAL_RETRY_LIMIT = 20
+    _THROTTLE_SECONDS = 5
+    _MAX_RETRIES = 5
+    _BACKOFF_SECONDS = 1
+
     def __init__(
         self,
         backend: Literal[
@@ -796,14 +803,63 @@ class LLMEnv:
             context, query, idx=idx, verbose=verbose, return_info=return_info
         )
 
+    @classmethod
+    def _register_retry_sync(cls):
+        cls._GLOBAL_RETRY_COUNT += 1
+        if cls._GLOBAL_RETRY_COUNT >= cls._GLOBAL_RETRY_LIMIT:
+            time.sleep(cls._THROTTLE_SECONDS)
+            cls._GLOBAL_RETRY_COUNT = 0
+            print_text(f"Throttling for {cls._THROTTLE_SECONDS} seconds after {cls._GLOBAL_RETRY_LIMIT} retries...", color="red")
+
+    @classmethod
+    async def _register_retry_async(cls):
+        cls._GLOBAL_RETRY_COUNT += 1
+        if cls._GLOBAL_RETRY_COUNT >= cls._GLOBAL_RETRY_LIMIT:
+            await asyncio.sleep(cls._THROTTLE_SECONDS)
+            cls._GLOBAL_RETRY_COUNT = 0
+            print_text(f"Throttling for {cls._THROTTLE_SECONDS} seconds after {cls._GLOBAL_RETRY_LIMIT} retries...", color="red")
+    
     def complete(self, prompt: str, verbose: bool = False, return_info: bool = False):
-        return self.llm.complete(prompt, verbose=verbose, return_info=return_info)
+        delay = self._BACKOFF_SECONDS
+        last_exc = None
+        for attempt in range(self._MAX_RETRIES):
+            try:
+                return self.llm.complete(prompt, verbose=verbose, return_info=return_info)
+            except Exception as exc:
+                last_exc = exc
+                if attempt >= self._MAX_RETRIES - 1:
+                    print_text(f"Failed after {self._MAX_RETRIES} attempts. Last error: {exc}", color="red")
+                    raise
+                self._register_retry_sync()
+                time.sleep(delay)
+                delay *= 2
+        if last_exc:
+            raise last_exc
+        return ""
     
     async def async_complete(self, prompt: str, verbose: bool = False, return_info: bool = False):
-        if hasattr(self.llm, "async_complete"):
-            return await self.llm.async_complete(prompt, verbose=verbose, return_info=return_info)
-        else:
+        if not hasattr(self.llm, "async_complete"):
             raise NotImplementedError(f"Async complete not implemented for backend {self.backend}")
+
+        delay = self._BACKOFF_SECONDS
+        last_exc = None
+        for attempt in range(self._MAX_RETRIES):
+            try:
+                return await self.llm.async_complete(
+                    prompt, verbose=verbose, return_info=return_info
+                )
+            except Exception as exc:
+                print_text(f"Error in async LLM API call (attempt {attempt + 1}/{self._MAX_RETRIES}): {exc}", color="red")
+                last_exc = exc
+                if attempt >= self._MAX_RETRIES - 1:
+                    print_text(f"Failed after {self._MAX_RETRIES} attempts. Last error: {exc}", color="red")
+                    raise
+                await self._register_retry_async()
+                await asyncio.sleep(delay)
+                delay *= 2
+        if last_exc:
+            raise last_exc
+        return ""
 
     def hello_world(self):
         response = self.complete("who are you?")

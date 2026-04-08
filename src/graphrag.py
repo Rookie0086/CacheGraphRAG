@@ -31,6 +31,10 @@ from src.memory_graph import MemoryGraphManager
 from src.entity_resolver import AsyncEntityResolver
 from src.retriever import HybridRetriever
 from data.rgb import get_rgb_info
+from data.multihop import get_multihop_info
+from data.dragonball import get_dragonball_info
+from data.squad import get_squad_info
+from data.hotpotqa import get_hotpotqa_info
 
 # os.environ["MILVUS_FORCE_FLUSH"] = "1"
 ingestion_time = []
@@ -44,7 +48,7 @@ async def run_ingestion(llm: LLMEnv, dataset: str, questions: List[str], answers
         promotion_threshold=5 # 晋升阈值
         ) 
     resolver = AsyncEntityResolver(
-        collection_name="entity_index",
+        collection_name="entity_index_" + dataset,
         embedding_func=llm.embed_model.get_embedding_async,
         memory_graph=mem_graph,
     )
@@ -86,15 +90,16 @@ async def run_retrieval(
     assert len(querys) == len(answers), "QA pairs should be 1-to-1."
     start_time = time.time()
     retriever = HybridRetriever(
-        vector_store = MilvusDB(db_name=dataset, overwrite=False), 
+        vector_store = MilvusDB(db_name=dataset, overwrite=False),
+        entity_index_name = "entity_index_" + dataset, 
         memory_graph=mem_graph, 
         llm=llm, 
-        chunk_registry=pipeline.chunk_registry
+        chunk_registry=pipeline.chunk_registry # 直接从持久化的图加载状态这里就不需要 pipeline 了
     )
     data = []
     for i,(query, answer) in tqdm(enumerate(zip(querys, answers)), total=len(querys)):
         print(f"\n🔍 Query {i+1}: {query}")
-        retrieval_res = retriever.hybrid_retrieve(query, topk=2, top_entities=3, top_chunks=3)
+        retrieval_res = retriever.hybrid_retrieve(query, topk=2, top_entities=3, top_chunks=3, top_rerank=6)
         data.append({
             "query": query,
             "answer": answer,
@@ -147,22 +152,28 @@ if __name__ == "__main__":
     )
 
     if "rgb" in args.dataset:
-        # data_info = get_rgb_info(f"{args.dataset[4:]}", chunk_size=2048)
-        data_info = get_rgb_info()
+        data_info = get_rgb_info(file=args.dataset[4:])
+        # texts:300, questions:300, answers:300
 
     elif "dragonball" == args.dataset:
-        data_info = get_dragonball_info("en", "Summary Question")
-        texts = data_info["texts"]
-        # Summary Question: 415 questions
-        # "questions": questions,
-        # "answers": answers,
-        # "languages": languages,
-        # "domains": domains,
-        # "question_types": question_types,
-        # "texts": texts,
-        # print(len(data_info["questions"]))
-        # print(len(texts), type(texts[0]))
+        data_info = get_dragonball_info("en", "Factual Question")
+        # texts:216
+        # "Factual Question":535, short answer
+        # "Multi-hop Reasoning Question":532, long answer
+        # "Irrelevant Unsolvable Question":233, answer: "Unable to answer"
+        # "Summary Question": 415 questions, long answer, summary of the context   
 
+    elif "multihop" in args.dataset:
+        data_info = get_multihop_info()
+        # texts:609, question:2556, answer:2556
+
+    elif "squad" in args.dataset:
+        data_info = get_squad_info(file="dev")
+        # texts:2067, question:10570, answer:10570
+
+    elif "hotpotqa" in args.dataset:
+        data_info = get_hotpotqa_info(file="hotpot_dev_fullwiki_v1")
+        # texts:7405, question:7405, answer:7405        
     else:
         raise ValueError(f"Unknown dataset: {args.dataset}")
     
@@ -175,14 +186,19 @@ if __name__ == "__main__":
     print("number of questions:", len(questions))
     print("number of answers:", len(answers))
     print("number of texts:", len(texts))
+    assert len(questions) == len(answers), "Questions, answers should have the same length."
+    mismatch_texts = len(questions) == len(answers) and len(questions) != len(texts)
     # exit(0)
     if args.end == -1:
         args.end = len(questions)
-
     questions = questions[args.start : args.end]
     answers = answers[args.start : args.end]
-    texts = texts[args.start : args.end]
-    # save_to_json(f"data/qa_pairs_{args.dataset}_{args.backend}_{args.start}_{args.end}_1.json", {
+    if not mismatch_texts:
+        texts = texts[args.start : args.end]
+    elif args.dataset == "squad":
+        texts = texts[args.start : (args.end//5)]  # SQuAD 每个文本对应多个QA对，简单起见按比例截取文本
+
+    # save_to_json(f"data/data_format/qa_pairs_{args.dataset}_{args.backend}_{args.start}_{args.end}.json", {
     #     "questions": questions,
     #     "answers": answers,
     #     "texts": texts,
@@ -198,6 +214,11 @@ if __name__ == "__main__":
         mem_graph, pipeline = await run_ingestion(
             llm, args.dataset, batch_questions, batch_answers, batch_texts
         )
+        # mem_graph = MemoryGraphManager(
+        # space_name=args.dataset, # NebulaGraph 持久化存储
+        # promotion_threshold=5 # 晋升阈值
+        # )
+        # mem_graph.load_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
         mem_graph.show_status()
         await run_retrieval(
             llm,
@@ -207,16 +228,18 @@ if __name__ == "__main__":
             batch_start,
             batch_end,
             mem_graph,
-            pipeline,
+            pipeline,  # 直接从持久化的图加载状态这里就不需要 pipeline 了
         )
-        mem_graph.save_graph_graphml(f"subgraph/memory_graph_{args.dataset}.graphml")
+        # mem_graph.save_graph_graphml(f"subgraph/memory_graph_{args.dataset}.graphml")
         mem_graph.save_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
         mem_graph.graph.clear()
         mem_graph.chunk_access_counter.clear()
         mem_graph._id_index.clear()
 
     async def run_batches():
-        if len(texts) > 30 and args.end > 30:
+        if mismatch_texts:
+            await main(questions, answers, texts, args.start, args.end)
+        elif len(texts) > 30:
             batch_size = 30
             for offset in range(0, len(texts), batch_size):
                 batch_start = args.start + offset
@@ -240,6 +263,7 @@ if __name__ == "__main__":
     # mem_graph.show_status()
     # asyncio.run(run_retrieval(llm, args.dataset, questions, answers, texts))
 
-# python -m database.db-tool --db rgb_en --clear vector
-# python -m database.db-tool --db entity_index --clear vector
-# python -m src.graphrag --start 0 --end 10 --dataset rgb_en --backend openai
+# python -m database.db-tool --db rgb_en_refine --clear vector
+# python -m database.db-tool --db entity_index_rgb_en_refine --clear vector
+# python -m src.graphrag --start 0 --end 120 --dataset rgb_en_refine --backend openai
+# tmux new -s hotpotqa -d bash -lc 'python -m src.graphrag --start 0 --end 120 --dataset hotpotqa --backend openai > log/hotpotqa_0_120_openai.log'
