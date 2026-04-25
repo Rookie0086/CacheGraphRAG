@@ -17,10 +17,42 @@ from difflib import SequenceMatcher
 from utils import get_config
 from utils.base import read_json, save_to_json
 from utils.prompts import prompt_extract_triplest_str, prompt_extract_entities_str, prompt_answer_with_chunks_str
-from utils.llm_env import LLMEnv, OllamaEnv  
+from utils.llm_env import LLMEnv
 from database.milvus import MilvusDB, myMilvus
 from database.nebulagraph import NebulaClient, NebulaDB
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+
+class LocalReranker:
+    def __init__(self, model_path: str, device: str = None, max_length: int = 512):
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Local reranker model not found: {model_path}")
+        self.model_path = model_path
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.max_length = max_length
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        self.model.to(self.device)
+        self.model.eval()
+
+    def score(self, query: str, passage: str) -> float:
+        if not query or not passage:
+            return 0.0
+        inputs = self.tokenizer(
+            query,
+            passage,
+            return_tensors="pt",
+            truncation=True,
+            max_length=self.max_length,
+        )
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+        logits = outputs.logits.squeeze()
+        score = torch.sigmoid(logits).item() if logits.numel() == 1 else torch.sigmoid(logits[0]).item()
+        return float(max(0.0, min(1.0, score)))
 
 class HybridRetriever:
     def __init__(
@@ -38,12 +70,8 @@ class HybridRetriever:
         self.memory_graph = memory_graph
         self.persistent_graph = self.memory_graph.persistent_graph 
         self.llm = llm
-        self.reranker = reranker or OllamaEnv(
-            model="dengcao/bge-reranker-v2-m3:latest",
-            base_url="http://localhost:11434",
-            timeout=1000,
-            temperature=0,
-            max_tokens=16,
+        self.reranker = reranker or LocalReranker(
+            model_path="/home/shuyurui/model/bge-reranker-v2-m3",
         )
         self.chunk_registry = chunk_registry or {}
 
@@ -65,8 +93,7 @@ class HybridRetriever:
             consistency_level="Strong",
         )
     
-    def retrieve_from_embedding(self, query: str, topk: int = 5):
-        query_emb = self._embed_text(query)
+    def retrieve_from_embedding(self, query_emb: np.ndarray, topk: int = 5):
         try:
             if not self.vector_store.db:
                 self.vector_store.load()
@@ -109,7 +136,7 @@ class HybridRetriever:
                 data["source_chunk"] = ",".join(str(v) for v in data["source_chunk"])
         nx.write_gexf(export_g, path)
 
-    def retrieve_from_memory_graph(self, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_memory_graph(self, query_emb: np.ndarray, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
         if not self.memory_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -118,7 +145,8 @@ class HybridRetriever:
         graph = self.memory_graph.graph
         vector_store = MilvusDB(db_name=self.entity_index_name, overwrite=False)
         text_to_embed = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
-        entity_emb = vector_store.embed_model.get_embedding(text_to_embed)
+        entity_emb = np.array(vector_store.embed_model.get_embedding(text_to_embed), dtype=float)
+        similarity_emb = query_emb if query_emb is not None else entity_emb
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         results = self._search_milvus(vector_store, entity_emb, search_params, limit=top_entities)
 
@@ -138,17 +166,49 @@ class HybridRetriever:
             node_set.update(self.memory_graph.get_nodes_by_id(mid))
         # print(f"Initial matched nodes in graph: {node_set}")
         base_nodes = set(node_set)
+        
+        def _cosine(a: np.ndarray, b: np.ndarray) -> float:
+            denom = (np.linalg.norm(a) * np.linalg.norm(b))
+            if denom == 0:
+                return 0.0
+            return float(np.dot(a, b) / denom)
+
+        def _node_text(uid) -> str:
+            data = graph.nodes.get(uid, {})
+            name = data.get("name") or str(uid)
+            ent_type = data.get("type", "")
+            desc = data.get("desc", "")
+            return f"Entity: {name}. Type: {ent_type}. Description: {desc}"
+
+        def _topk_by_similarity(node_ids: set, k: int = 5) -> List:
+            scored = []
+            for uid in node_ids:
+                text = _node_text(uid)
+                emb = np.array(vector_store.embed_model.get_embedding(text), dtype=float)
+                scored.append((uid, _cosine(similarity_emb, emb)))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            return [uid for uid, _ in scored[:k]]
+            
         first_hop = set()
         for uid in list(node_set):
             first_hop.update(graph.predecessors(uid))
             first_hop.update(graph.successors(uid))
         node_set.update(first_hop)
-        # 扩展成2-hop邻居集合，统计相关 chunk 频次
+        # 只选取一跳中最相似的节点进行扩展
+        top_first = _topk_by_similarity(first_hop, k=5)
         second_hop = set()
-        for uid in list(first_hop):
+        for uid in top_first:
             second_hop.update(graph.predecessors(uid))
             second_hop.update(graph.successors(uid))
         node_set.update(second_hop)
+
+        # 再从二跳中选最相似的节点扩展三跳
+        # top_second = _topk_by_similarity(second_hop, k=5)
+        # third_hop = set()
+        # for uid in top_second:
+        #     third_hop.update(graph.predecessors(uid))
+        #     third_hop.update(graph.successors(uid))
+        # node_set.update(third_hop)
         # print(f"Expanded node set with neighbors: {node_set}")
         subgraph = graph.subgraph(node_set).copy()
         # self.save_graph_gexf(f"subgraph/temp_subgraph_{entity_name}.gexf", subgraph)  # Debug: export subgraph to inspect structure
@@ -178,7 +238,12 @@ class HybridRetriever:
         # 2-hop nodes: low weight
         for uid in second_hop:
             data = graph.nodes.get(uid, {})
-            add_score(data.get("source_chunks"), 0.1)
+            add_score(data.get("source_chunks"), 0.3)
+
+        # 3-hop nodes: minimal weight
+        # for uid in third_hop:
+        #     data = graph.nodes.get(uid, {})
+        #     add_score(data.get("source_chunks"), 0.2)
 
         # Edges: weight by hop proximity
         for u, v, _, data in subgraph.edges(data=True, keys=True):
@@ -188,7 +253,11 @@ class HybridRetriever:
             if u in base_nodes or v in base_nodes:
                 add_score([chunk], 0.5)
             elif u in first_hop or v in first_hop:
-                add_score([chunk], 0.1)
+                add_score([chunk], 0.3)
+            elif u in second_hop or v in second_hop:
+                add_score([chunk], 0.2)
+            # elif u in third_hop or v in third_hop:
+            #     add_score([chunk], 0.1)
 
         sorted_chunks = sorted(chunk_scores.items(), key=lambda x: x[1], reverse=True)
         top_chunk_ids = [c for c, _ in sorted_chunks[:top_chunks]]
@@ -198,7 +267,7 @@ class HybridRetriever:
             "matched_entities": matched,
         }
 
-    def retrieve_from_persistent_graph(self, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_persistent_graph(self, query_emb: np.ndarray, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
         if not self.persistent_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -207,7 +276,8 @@ class HybridRetriever:
         graph = self.persistent_graph
         vector_store = MilvusDB(db_name=self.entity_index_name, overwrite=False)
         text_to_embed = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
-        entity_emb = vector_store.embed_model.get_embedding(text_to_embed)
+        entity_emb = np.array(vector_store.embed_model.get_embedding(text_to_embed), dtype=float)
+        similarity_emb = query_emb if query_emb is not None else entity_emb
         search_params = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         results = self._search_milvus(vector_store, entity_emb, search_params, limit=top_entities)
 
@@ -249,38 +319,98 @@ class HybridRetriever:
         if not matched:
             return {"chunks": [], "matched_entities": []}
 
-        valid_vids_str = ", ".join([graph._format_vid(v) for v in existing_vids])
-        # GO 1 STEPS 拉 1-hop 边与邻居节点，统计 source_chunk 频次
-        go_query = (
-            "GO 1 STEPS FROM "
-            f"{valid_vids_str} "
-            "OVER `relationship` BIDIRECT "
-            "YIELD src(edge) AS src, dst(edge) AS dst, "
-            "properties(edge).relationship AS relation, "
-            "properties(edge).source_chunk AS source_chunk, "
-            "properties($$).source_chunk AS dst_source_chunk;"
-        )
-        try:
-            edge_rows = graph.query(go_query)
-        except Exception:
-            print("Error occurred while fetching edges.")
-            edge_rows = {}
+        def _cosine(a: np.ndarray, b: np.ndarray) -> float:
+            denom = (np.linalg.norm(a) * np.linalg.norm(b))
+            if denom == 0:
+                return 0.0
+            return float(np.dot(a, b) / denom)
 
-        # GO 2 STEPS 拉 2-hop 邻居边与节点，扩展统计 source_chunk 频次
-        go_query_2 = (
-            "GO 2 STEPS FROM "
-            f"{valid_vids_str} "
-            "OVER `relationship` BIDIRECT "
-            "YIELD src(edge) AS src, dst(edge) AS dst, "
-            "properties(edge).relationship AS relation, "
-            "properties(edge).source_chunk AS source_chunk, "
-            "properties($$).source_chunk AS dst_source_chunk;"
-        )
-        try:
-            edge_rows_2 = graph.query(go_query_2)
-        except Exception:
-            print("Error occurred while fetching 2-hop edges.")
-            edge_rows_2 = {}
+        def _node_text(row: dict) -> str:
+            name = row.get("name") or ""
+            ent_type = row.get("type", "")
+            return f"Entity: {name}. Type: {ent_type}."
+
+        def _fetch_node_props(vids: set) -> Dict[str, Dict[str, str]]:
+            if not vids:
+                return {}
+            vids_str = ", ".join([graph._format_vid(v) for v in vids])
+            fetch_query = (
+                "FETCH PROP ON `entity` "
+                f"{vids_str} "
+                "YIELD id(vertex) AS vid, properties(vertex).name AS name, "
+                "properties(vertex).type AS type, "
+                "properties(vertex).source_chunk AS source_chunk;"
+            )
+            try:
+                rows = graph.query(fetch_query)
+            except Exception:
+                return {}
+            vids_list = rows.get("vid", [])
+            names = rows.get("name", [])
+            types = rows.get("type", [])
+            chunks = rows.get("source_chunk", [])
+            props = {}
+            for idx, vid in enumerate(vids_list):
+                if vid is None:
+                    continue
+                props[str(vid)] = {
+                    "name": names[idx] if idx < len(names) else "",
+                    "type": types[idx] if idx < len(types) else "",
+                    "source_chunk": chunks[idx] if idx < len(chunks) else "",
+                }
+            return props
+
+        def _topk_by_similarity(vids: set, k: int = 5) -> List[str]:
+            props = _fetch_node_props(vids)
+            scored = []
+            for vid, row in props.items():
+                text = _node_text(row)
+                emb = np.array(vector_store.embed_model.get_embedding(text), dtype=float)
+                scored.append((vid, _cosine(similarity_emb, emb)))
+            scored.sort(key=lambda x: x[1], reverse=True)
+            return [vid for vid, _ in scored[:k]]
+
+        def _run_go_query(vids: set) -> Dict:
+            if not vids:
+                return {}
+            vids_str = ", ".join([graph._format_vid(v) for v in vids])
+            go_query = (
+                "GO 1 STEPS FROM "
+                f"{vids_str} "
+                "OVER `relationship` BIDIRECT "
+                "YIELD src(edge) AS src, dst(edge) AS dst, "
+                "properties(edge).relationship AS relation, "
+                "properties(edge).source_chunk AS source_chunk;"
+            )
+            try:
+                return graph.query(go_query)
+            except Exception:
+                return {}
+
+        def _collect_vids(rows: Dict) -> set:
+            vids = set()
+            for key in ("src", "dst"):
+                for vid in rows.get(key, []):
+                    if vid is None:
+                        continue
+                    vids.add(str(vid))
+            return vids
+
+        base_vids = set(str(v) for v in existing_vids)
+        edge_rows = _run_go_query(base_vids)
+        first_hop = _collect_vids(edge_rows) - base_vids
+        top_first = _topk_by_similarity(first_hop, k=5)
+
+        edge_rows_2 = _run_go_query(set(top_first))
+        second_hop = _collect_vids(edge_rows_2) - base_vids - set(top_first)
+        top_second = _topk_by_similarity(second_hop, k=5)
+
+        # edge_rows_3 = _run_go_query(set(top_second))
+        # third_hop = _collect_vids(edge_rows_3) - base_vids - set(top_first) - set(top_second)
+
+        first_props = _fetch_node_props(set(top_first))
+        second_props = _fetch_node_props(set(top_second))
+        # third_props = _fetch_node_props(set(third_hop))
 
         chunk_scores = {}
         def add_score(chunks_data, weight):
@@ -299,17 +429,28 @@ class HybridRetriever:
         for chunks in node_rows.get("source_chunk", []):
             add_score(chunks, 1.0)
 
-        # 2. 1-hop 关联的边与目标节点 Chunk：次级依据，给予权重 0.5
-        for chunk in edge_rows.get("source_chunk", []):
-            if chunk: add_score([chunk], 0.5)
-        for chunks in edge_rows.get("dst_source_chunk", []):
-            add_score(chunks, 0.5)
+        # 2. 1-hop 相似节点 Chunk：次级依据，给予权重 0.5
+        for row in first_props.values():
+            add_score(row.get("source_chunk", ""), 0.5)
 
-        # 3. 2-hop 关联的边与目标节点 Chunk：极易引入噪声，给予极低权重 0.1
+        # 3. 2-hop 相似节点 Chunk：中等权重 0.3
+        for row in second_props.values():
+            add_score(row.get("source_chunk", ""), 0.3)
+
+        # 4. 3-hop 节点 Chunk：较低权重 0.2
+        # for row in third_props.values():
+        #     add_score(row.get("source_chunk", ""), 0.2)
+
+        # 边的 source_chunk 评分
+        for chunk in edge_rows.get("source_chunk", []):
+            if chunk:
+                add_score([chunk], 0.5)
         for chunk in edge_rows_2.get("source_chunk", []):
-            if chunk: add_score([chunk], 0.1)
-        for chunks in edge_rows_2.get("dst_source_chunk", []):
-            add_score(chunks, 0.1)
+            if chunk:
+                add_score([chunk], 0.3)
+        # for chunk in edge_rows_3.get("source_chunk", []):
+        #     if chunk:
+        #         add_score([chunk], 0.2)
 
         # 按分数降序排列提取 Top N
         sorted_chunks = sorted(chunk_scores.items(), key=lambda x: x[1], reverse=True)
@@ -354,32 +495,18 @@ class HybridRetriever:
         return chunk_text
 
     def _rerank_score(self, query: str, passage: str) -> float:
-        if not passage:
+        if not self.reranker or not passage:
             return 0.0
-        prompt = (
-            "You are a reranker. Given a query and a passage, output a single floating point "
-            "relevance score between 0 and 1. Output only the number.\n"
-            f"Query: {query}\n"
-            f"Passage: {passage}\n"
-            "Score:"
-        )
-        response = self.reranker.complete(prompt) if self.reranker else ""
-        if not response:
-            return 0.0
-        match = re.search(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", response)
-        if not match:
-            return 0.0
-        try:
-            score = float(match.group(0))
-        except ValueError:
-            return 0.0
-        return max(0.0, min(1.0, score))
+        if hasattr(self.reranker, "score"):
+            return float(self.reranker.score(query, passage))
+        return 0.0
 
     def hybrid_retrieve(self, query: str, topk: int = 5, top_entities: int = 5, top_chunks: int = 10, top_rerank: int = 10):
         # ==========================================
         # 1. 向量检索路 (Vector Retrieval)
         # ==========================================
-        embedding_res = self.retrieve_from_embedding(query, topk=topk)
+        query_emb = self._embed_text(query)
+        embedding_res = self.retrieve_from_embedding(query_emb, topk=topk)
         vector_hits = embedding_res.get("embedding_hits", []) # [{"id": "chunk_xxx", "score": 0.8}, ...]
 
         # ==========================================
@@ -391,28 +518,39 @@ class HybridRetriever:
         memory_res = []
         persistent_res = []
         graph_chunk_scores_aggregated = {} # 用于汇总图检索分数
+        # chunk_entity_coverage = {} # 新增：记录 Chunk 被几个不同的实体检索到
 
         for ent in extracted_entities:
             # 检索内存图 
-            m_res = self.retrieve_from_memory_graph(ent["id"], ent["type"], ent["desc"], top_entities, top_chunks)
-            memory_res.append(m_res)
+            m_res = self.retrieve_from_memory_graph(query_emb, ent["id"], ent["type"], ent["desc"], top_entities, top_chunks)
+            memory_res.append(m_res)           
             
             # 检索持久化图
-            p_res = self.retrieve_from_persistent_graph(ent["id"], ent["type"], ent["desc"], top_entities, top_chunks)
+            p_res = self.retrieve_from_persistent_graph(query_emb, ent["id"], ent["type"], ent["desc"], top_entities, top_chunks)
             persistent_res.append(p_res)
 
             # 汇总图的chunk分数
             for cid, score in m_res.get("chunk_scores", {}).items():
                 graph_chunk_scores_aggregated[cid] = graph_chunk_scores_aggregated.get(cid, 0.0) + score
+                # chunk_entity_coverage.setdefault(cid, set()).add(ent["id"]) # 记录该 chunk 关联的实体
+
             for cid, score in p_res.get("chunk_scores", {}).items():
                 graph_chunk_scores_aggregated[cid] = graph_chunk_scores_aggregated.get(cid, 0.0) + score
-
+                # chunk_entity_coverage.setdefault(cid, set()).add(ent["id"])
+            
             # [保持原有的晋升逻辑触发...]
             for cid in m_res.get("chunks", []):
                 triggered, data = self.memory_graph.access_chunk(cid)
                 if triggered:
                     self.memory_graph.write_to_persistent_graph([data])
-
+        
+        # # 相交奖励计算
+        # for cid in graph_chunk_scores_aggregated:
+        #     coverage_count = len(chunk_entity_coverage[cid])
+        #     if coverage_count > 1:
+        #         # 如果一个 chunk 被 2 个及以上 Query 实体共同引出，说明路径相交，给予强烈提权
+        #         graph_chunk_scores_aggregated[cid] *= (1.5 ** (coverage_count - 1))
+        
         # 将图检索结果按分数排序，得到图检索 Rank
         graph_ranked_chunks = sorted(graph_chunk_scores_aggregated.items(), key=lambda x: x[1], reverse=True)
 

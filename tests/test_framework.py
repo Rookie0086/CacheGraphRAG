@@ -756,7 +756,7 @@ class HybridRetriever:
                 data["source_chunk"] = ",".join(str(v) for v in data["source_chunk"])
         nx.write_gexf(export_g, path)
 
-    def retrieve_from_memory_graph(self, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_memory_graph(self, query: str, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
         if not self.memory_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -812,7 +812,7 @@ class HybridRetriever:
             "matched_entities": matched,
         }
 
-    def retrieve_from_persistent_graph(self, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_persistent_graph(self, query: str, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
         if not self.persistent_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -922,9 +922,9 @@ class HybridRetriever:
         persistent_res = []
         # TODO: 考虑异步并发地检索多个实体以提升效率
         for ent in extracted_entities:
-            memory_res.append(self.retrieve_from_memory_graph(ent["id"], ent["type"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
+            memory_res.append(self.retrieve_from_memory_graph(query, ent["id"], ent["type"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
             # TODO: 内存图中找到了相关实体后，是否还需要继续在持久化图中检索？(冲突解决策略)
-            persistent_res.append(self.retrieve_from_persistent_graph(ent["id"], ent["type"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
+            persistent_res.append(self.retrieve_from_persistent_graph(query, ent["id"], ent["type"], ent["desc"], top_entities=top_entities, top_chunks=top_chunks))
 
         chunk_ids = []
         for res in memory_res:

@@ -52,25 +52,36 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
 	)
 
 	# model_path = "/home/shuyurui/model/Llama-3.1-8B"  # Update this path to your local model"
+	# llm = LLMEnv(
+    #         backend="ollama",
+    #         model="llama3:latest",
+    #         base_url="http://localhost:11434",
+    #         max_tokens=1024,
+    #         timeout=1000,
+    #     )
 	llm = LLMEnv(
-            backend="ollama",
-            model="llama3:latest",
-            base_url="http://localhost:11434",
-            max_tokens=512,
-            timeout=1000,
-        )
+		backend="openai", 
+		model="gpt-4.1-mini", 
+		api_key="sk-of-OUbbhtqucYYpKtappAhGLNhviBsIiNEgiwzxwiwOpiEgxgtNXMzrPRAVauVBvalD",
+		base_url="https://api.ofox.ai/v1",
+		max_tokens=1024, 
+		timeout=1000
+		)
 
 	milvus_db = MilvusDB(db_name=dataset, overwrite=False)
 	milvus_db.load()
 
 	chunk_text_map = build_chunk_text_map(chunk_ids, milvus_db)
 	all_labels = []
+	
 	all_time = []
 	all_bert_scores = []
 	outputs = []
 	for i, item in tqdm(enumerate(retrieval_data), total=len(retrieval_data)):
 		query = item.get("query", "")
 		gold = item.get("answer", "")
+		# if not isinstance(gold[0], list):
+		# 	gold = [gold]
 		chunk_list = item.get("retrieval", {}).get("chunks", [])
 		context_parts = []
 		prompt = ""
@@ -183,16 +194,16 @@ if __name__ == "__main__":
 	parser.add_argument("--backend", type=str, default="openai")
 	args = parser.parse_args()
 	run_generate(args.dataset, args.start, args.end, args.backend)
-# python -m tests.test_generate --dataset rgb_en --start 0 --end 20 --backend openai
+# CUDA_VISIBLE_DEVICES="1" python -m tests.test_generate --dataset musique --start 0 --end 300 --backend openai
 # python -m scripts.merge_retrieval_results \
-#   --inputs data/retrieval_results_rgb_en_0_30.json \
-#            data/retrieval_results_rgb_en_30_60.json \
-#            data/retrieval_results_rgb_en_60_90.json \
-#            data/retrieval_results_rgb_en_90_120.json \
-# 		   data/retrieval_results_rgb_en_120_150.json \
-# 		   data/retrieval_results_rgb_en_150_180.json \
-# 		   data/retrieval_results_rgb_en_180_210.json \
-# 		   data/retrieval_results_rgb_en_210_240.json \
-# 		   data/retrieval_results_rgb_en_240_270.json \
-# 		   data/retrieval_results_rgb_en_270_300.json \
-#   --output data/retrieval_results_rgb_en_0_300.json
+#   --inputs data/retrieval_results_musique_0_30.json \
+#            data/retrieval_results_musique_30_60.json \
+#            data/retrieval_results_musique_60_90.json \
+#            data/retrieval_results_musique_90_120.json \
+# 		   data/retrieval_results_musique_120_150.json \
+# 		   data/retrieval_results_musique_150_180.json \
+# 		   data/retrieval_results_musique_180_210.json \
+# 		   data/retrieval_results_musique_210_240.json \
+# 		   data/retrieval_results_musique_240_270.json \
+# 		   data/retrieval_results_musique_270_300.json \
+#   --output data/retrieval_results_musique_0_300.json

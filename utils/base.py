@@ -257,7 +257,10 @@ def checkanswer(prediction, ground_truth, verbose=False):
     """
     def _normalize_answer(text: str) -> str:
         normalized = text.lower().strip()
-        return normalized.rstrip("。.!?！？,，;；:：")
+        normalized = re.sub(r"[\.,，。;；:：]", " ", normalized)
+        normalized = normalized.rstrip("!?！？")
+        normalized = " ".join(normalized.split())
+        return normalized
 
     prediction = _normalize_answer(prediction)
     if not isinstance(ground_truth, list):

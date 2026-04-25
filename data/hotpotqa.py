@@ -1,9 +1,11 @@
 import json
 import os
+import random
 from typing import Dict, List
 
 from data.paths import HOTPOTQA_DATAPATH
 from utils import file_exist
+from utils.base import save_to_json
 
 
 def _format_context(entry) -> str:
@@ -16,21 +18,22 @@ def _format_context(entry) -> str:
         body = " ".join(str(s) for s in sentences if str(s))
     else:
         body = str(sentences)
-    return f"{title} {body}".strip()
+    return f"{title}:{body}".strip()
 
 
-def get_hotpotqa_info(file: str = "hotpot_dev_fullwiki_v1") -> Dict[str, List]:
+def get_hotpotqa_info(file: str = "hotpot_dev_distractor_v1",num: int = 300) -> Dict[str, List]:
     data_file = os.path.join(HOTPOTQA_DATAPATH, f"{file}.json")
     assert file_exist(data_file), f"{data_file} not exist!"
-
     texts = []
     questions = []
     answers = []
 
     with open(data_file, "r", encoding="utf-8") as handle:
-        data_list = json.load(handle)
-
-    for item in data_list:
+        data = json.load(handle)
+    data_list = data if isinstance(data, list) else [data]
+    sample_size = min(num, len(data_list))
+    sampled_items = random.sample(data_list, sample_size) if sample_size > 0 else []
+    for item in sampled_items:
         questions.append(item.get("question", ""))
         answers.append(item.get("answer", ""))
         context_parts = []
@@ -50,9 +53,19 @@ def get_hotpotqa_info(file: str = "hotpot_dev_fullwiki_v1") -> Dict[str, List]:
 
 
 if __name__ == "__main__":
-    hotpot_info = get_hotpotqa_info("hotpot_dev_fullwiki_v1")
+    data_info = get_hotpotqa_info("hotpot_dev_distractor_v1")
     print(
-        len(hotpot_info["texts"]),
-        len(hotpot_info["questions"]),
-        len(hotpot_info["answers"]),
+        len(data_info["texts"]),
+        len(data_info["questions"]),
+        len(data_info["answers"]),
     )
+    questions, answers, texts = (
+        data_info["questions"],
+        data_info["answers"],
+        data_info["texts"],
+    )
+    save_to_json(f"data/data_format/qa_pairs_hotpotqa.json", {
+        "questions": questions[:10],
+        "answers": answers[:10],
+        "texts": texts[:10],
+    }, indent=2, info=False)

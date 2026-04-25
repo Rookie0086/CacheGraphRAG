@@ -19,6 +19,8 @@ def get_multihop_info(q_type=None) -> Dict:
 
         for data in data_list:
             # data = json.loads(line)
+            if data["answer"] == "Insufficient information.":
+                continue
             if q_type and data["question_type"] != q_type:
                 continue
             questions.append(data["query"])

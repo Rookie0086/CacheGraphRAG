@@ -35,15 +35,20 @@ from data.multihop import get_multihop_info
 from data.dragonball import get_dragonball_info
 from data.squad import get_squad_info
 from data.hotpotqa import get_hotpotqa_info
+from data.ectqa import get_ectqa_info
+from data.whoqa import get_whoqa_info, get_whoqa_ex_info
+from data.cond import get_cond_info
+from data.wikimultihopqa import get_2wikimultihopqa_info
+from data.musique import get_musique_info
 
 # os.environ["MILVUS_FORCE_FLUSH"] = "1"
 ingestion_time = []
 retrieval_time = []
 
-async def run_ingestion(llm: LLMEnv, dataset: str, questions: List[str], answers: List[str], texts: List[str]):
+async def run_ingestion(llm: LLMEnv, mem_graph: MemoryGraphManager, dataset: str, questions: List[str], answers: List[str], texts: List[str]):
 
     print("🚀 --- [阶段 1: 文档入库处理 (Ingestion)] ---")
-    mem_graph = MemoryGraphManager(
+    mem_graph = mem_graph or MemoryGraphManager(
         space_name=dataset, # NebulaGraph 持久化存储
         promotion_threshold=5 # 晋升阈值
         ) 
@@ -80,7 +85,7 @@ async def run_retrieval(
     start: int,
     end: int,
     mem_graph: MemoryGraphManager,
-    pipeline: DocumentIngestionPipeline,
+    pipeline: DocumentIngestionPipeline = None,
 ):
     print("\n🚀 --- [阶段 2: 检索与子图晋升 (Retrieval & Promotion)] ---")
     
@@ -163,17 +168,37 @@ if __name__ == "__main__":
         # "Irrelevant Unsolvable Question":233, answer: "Unable to answer"
         # "Summary Question": 415 questions, long answer, summary of the context   
 
-    elif "multihop" in args.dataset:
+    elif "multihop" == args.dataset:
         data_info = get_multihop_info()
-        # texts:609, question:2556, answer:2556
+        # texts:609, question:2255, answer:2255, Insufficient information question:301.
 
-    elif "squad" in args.dataset:
+    elif "squad" == args.dataset:
         data_info = get_squad_info(file="dev")
         # texts:2067, question:10570, answer:10570
 
-    elif "hotpotqa" in args.dataset:
-        data_info = get_hotpotqa_info(file="hotpot_dev_fullwiki_v1")
-        # texts:7405, question:7405, answer:7405        
+    elif "hotpotqa" == args.dataset:
+        data_info = get_hotpotqa_info(file="hotpot_dev_distractor_v1", num=300)
+        # texts:7405, question:7405, answer:7405  
+
+    elif "ectqa" == args.dataset:
+        data_info = get_ectqa_info(corpus_file="new.jsonl.gz")
+        # base_texts:384, new_text:96, question:248, answer:248
+    
+    elif "whoqa" == args.dataset:
+        data_info = get_whoqa_ex_info(limit=120, update=True)
+        # texts: 120, questions: 120, answers: 120
+
+    elif "cond" == args.dataset:
+        data_info = get_cond_info(file="cond")
+        # texts: 334, questions: 334, answers: 334
+        
+    elif "wikimultihopqa" == args.dataset:
+        data_info = get_2wikimultihopqa_info()
+        # texts: 1000, questions: 1000, answers: 1000
+
+    elif "musique" == args.dataset:
+        data_info = get_musique_info(limit=300)
+        # texts: 1000, questions: 1000, answers: 1000
     else:
         raise ValueError(f"Unknown dataset: {args.dataset}")
     
@@ -182,7 +207,6 @@ if __name__ == "__main__":
         data_info["answers"],
         data_info["texts"],
     )
-
     print("number of questions:", len(questions))
     print("number of answers:", len(answers))
     print("number of texts:", len(texts))
@@ -197,6 +221,8 @@ if __name__ == "__main__":
         texts = texts[args.start : args.end]
     elif args.dataset == "squad":
         texts = texts[args.start : (args.end//5)]  # SQuAD 每个文本对应多个QA对，简单起见按比例截取文本
+    elif args.dataset == "ectqa":
+        texts = texts[args.start : 100]  
 
     # save_to_json(f"data/data_format/qa_pairs_{args.dataset}_{args.backend}_{args.start}_{args.end}.json", {
     #     "questions": questions,
@@ -211,14 +237,16 @@ if __name__ == "__main__":
         batch_start: int,
         batch_end: int,
     ):
-        mem_graph, pipeline = await run_ingestion(
-            llm, args.dataset, batch_questions, batch_answers, batch_texts
+        mem_graph = MemoryGraphManager(
+        space_name=args.dataset, # NebulaGraph 持久化存储
+        promotion_threshold=5 # 晋升阈值
         )
-        # mem_graph = MemoryGraphManager(
-        # space_name=args.dataset, # NebulaGraph 持久化存储
-        # promotion_threshold=5 # 晋升阈值
-        # )
         # mem_graph.load_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
+        # batch_texts = []
+        mem_graph.show_status()
+        mem_graph, pipeline = await run_ingestion(
+            llm, mem_graph, args.dataset, batch_questions, batch_answers, batch_texts
+        )
         mem_graph.show_status()
         await run_retrieval(
             llm,
@@ -237,7 +265,7 @@ if __name__ == "__main__":
         mem_graph._id_index.clear()
 
     async def run_batches():
-        if mismatch_texts:
+        if mismatch_texts or args.dataset in ["whoqa","ectqa"]:
             await main(questions, answers, texts, args.start, args.end)
         elif len(texts) > 30:
             batch_size = 30
@@ -263,7 +291,7 @@ if __name__ == "__main__":
     # mem_graph.show_status()
     # asyncio.run(run_retrieval(llm, args.dataset, questions, answers, texts))
 
-# python -m database.db-tool --db rgb_en_refine --clear vector
-# python -m database.db-tool --db entity_index_rgb_en_refine --clear vector
-# python -m src.graphrag --start 0 --end 120 --dataset rgb_en_refine --backend openai
-# tmux new -s hotpotqa -d bash -lc 'python -m src.graphrag --start 0 --end 120 --dataset hotpotqa --backend openai > log/hotpotqa_0_120_openai.log'
+# python -m database.db-tool --db wikimultihopqa --clear vector
+# python -m database.db-tool --db entity_index_wikimultihopqa --clear vector
+# CUDA_VISIBLE_DEVICES="1" python -m src.graphrag --start 0 --end 300 --dataset wikimultihopqa --backend openai > log/wikimultihopqa_0_300_openai.log
+# tmux new -s wikimultihopqa -d bash -lc 'CUDA_VISIBLE_DEVICES="" python -m src.graphrag --start 0 --end 300 --dataset wikimultihopqa --backend openai > log/wikimultihopqa_0_300_openai.log'
