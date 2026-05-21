@@ -1238,3 +1238,7 @@ if __name__ == "__main__":
     # cd nebula-graph-studio-3.7.0
     # 后台运行studio web服务，连接到 NebulaGraph 数据库
     # docker compose up -d
+    # 2. Studio — SSH 隧道（因为已绑定 localhost）
+    # 在本地终端执行：
+    # ssh -L 7001:127.0.0.1:7001 shuyurui@121.48.164.166 -N
+    # 然后浏览器打开 http://localhost:7001，在 Studio 中连接 Nebula 时填 127.0.0.1:9669，用户名 root，密码 nebula。

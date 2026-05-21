@@ -30,6 +30,7 @@ from src.pipeline import DocumentIngestionPipeline
 from src.memory_graph import MemoryGraphManager
 from src.entity_resolver import AsyncEntityResolver
 from src.retriever import HybridRetriever
+from src.IterativeAgenticEngine import IterativeAgenticEngine
 from data.rgb import get_rgb_info
 from data.multihop import get_multihop_info
 from data.dragonball import get_dragonball_info
@@ -44,6 +45,25 @@ from data.musique import get_musique_info
 # os.environ["MILVUS_FORCE_FLUSH"] = "1"
 ingestion_time = []
 retrieval_time = []
+total_IO_count = 0
+
+def _load_list(path: str) -> List[dict]:
+    data = read_json(path)
+    if not isinstance(data, list):
+        raise ValueError(f"Expected a list in {path}, got {type(data).__name__}.")
+    return data
+
+def _merge_retrieval_files(input_files: List[str], output_file: str) -> int:
+    merged = []
+    for path in input_files:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Missing input file: {path}")
+        merged.extend(_load_list(path))
+    save_to_json(output_file, merged, indent=2, info=False)
+    return len(merged)
+
+def _result_path(dataset: str, start: int, end: int) -> str:
+    return f"data/retrieval_results_{dataset}_{start}_{end}.json"
 
 async def run_ingestion(llm: LLMEnv, mem_graph: MemoryGraphManager, dataset: str, questions: List[str], answers: List[str], texts: List[str]):
 
@@ -86,13 +106,17 @@ async def run_retrieval(
     end: int,
     mem_graph: MemoryGraphManager,
     pipeline: DocumentIngestionPipeline = None,
+    use_agentic: bool = False,
+    agentic_steps: int = 3,
 ):
+    global total_IO_count
     print("\n🚀 --- [阶段 2: 检索与子图晋升 (Retrieval & Promotion)] ---")
     
     querys = questions
     answers = answers
     print(f"Unique Queries: {len(querys)}, Unique Answers: {len(answers)}")
     assert len(querys) == len(answers), "QA pairs should be 1-to-1."
+    mem_graph.nebula_IO_count = 0
     start_time = time.time()
     retriever = HybridRetriever(
         vector_store = MilvusDB(db_name=dataset, overwrite=False),
@@ -101,10 +125,25 @@ async def run_retrieval(
         llm=llm, 
         chunk_registry=pipeline.chunk_registry # 直接从持久化的图加载状态这里就不需要 pipeline 了
     )
+    agentic_engine = None
+    if use_agentic:
+        agentic_engine = IterativeAgenticEngine(
+            llm=llm,
+            dataset=dataset,
+            retriever=retriever,
+            max_steps=agentic_steps,
+            topk=2,
+            top_entities=3,
+            top_chunks=3,
+            top_rerank=6,
+        )
     data = []
     for i,(query, answer) in tqdm(enumerate(zip(querys, answers)), total=len(querys)):
         print(f"\n🔍 Query {i+1}: {query}")
-        retrieval_res = retriever.hybrid_retrieve(query, topk=2, top_entities=3, top_chunks=3, top_rerank=6)
+        if agentic_engine:
+            retrieval_res = agentic_engine.run(query)
+        else:
+            retrieval_res = retriever.hybrid_retrieve(query, topk=2, top_entities=3, top_chunks=3, top_rerank=6)
         data.append({
             "query": query,
             "answer": answer,
@@ -113,6 +152,8 @@ async def run_retrieval(
         save_to_json(file_path=f"data/retrieval_results_{dataset}_{start}_{end}.json", data=data, indent=2, info=False)
     print(f"检索与晋升阶段完成！")
     print(f"retrieval & promotion has taken: {time.time() - start_time} seconds")
+    print(f"nebula_IO_count: {mem_graph.nebula_IO_count}")
+    total_IO_count += mem_graph.nebula_IO_count
     mem_graph.show_status()
     retrieval_time.append(time.time() - start_time)
 
@@ -126,6 +167,8 @@ if __name__ == "__main__":
     parser.add_argument("--end", type=int, default=-1)
     parser.add_argument("--dataset", type=str, default="rgb_en")
     parser.add_argument("--backend", type=str, default="openai")
+    parser.add_argument("--agentic", action="store_true")
+    parser.add_argument("--agentic_steps", type=int, default=3)
 
     args = parser.parse_args()
     print(args)
@@ -185,7 +228,7 @@ if __name__ == "__main__":
         # base_texts:384, new_text:96, question:248, answer:248
     
     elif "whoqa" == args.dataset:
-        data_info = get_whoqa_ex_info(limit=120, update=True)
+        data_info = get_whoqa_ex_info(limit=600, update=True)
         # texts: 120, questions: 120, answers: 120
 
     elif "cond" == args.dataset:
@@ -241,7 +284,7 @@ if __name__ == "__main__":
         space_name=args.dataset, # NebulaGraph 持久化存储
         promotion_threshold=5 # 晋升阈值
         )
-        # mem_graph.load_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
+        mem_graph.load_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
         # batch_texts = []
         mem_graph.show_status()
         mem_graph, pipeline = await run_ingestion(
@@ -257,6 +300,8 @@ if __name__ == "__main__":
             batch_end,
             mem_graph,
             pipeline,  # 直接从持久化的图加载状态这里就不需要 pipeline 了
+            use_agentic=args.agentic,
+            agentic_steps=args.agentic_steps,
         )
         # mem_graph.save_graph_graphml(f"subgraph/memory_graph_{args.dataset}.graphml")
         mem_graph.save_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
@@ -267,8 +312,10 @@ if __name__ == "__main__":
     async def run_batches():
         if mismatch_texts or args.dataset in ["whoqa","ectqa"]:
             await main(questions, answers, texts, args.start, args.end)
-        elif len(texts) > 30:
-            batch_size = 30
+        elif len(texts) > 20:
+            batch_size = 20
+            batch_files = []
+            merged_output = _result_path(args.dataset, args.start, args.end)
             for offset in range(0, len(texts), batch_size):
                 batch_start = args.start + offset
                 batch_end = min(args.start + offset + batch_size, args.end)
@@ -279,19 +326,25 @@ if __name__ == "__main__":
                     batch_start,
                     batch_end,
                 )
+                batch_files.append(_result_path(args.dataset, batch_start, batch_end))
+                total = _merge_retrieval_files(batch_files, merged_output)
+                print(f"Merged {total} items into {merged_output}")
         else:
             await main(questions, answers, texts, args.start, args.end)
 
     asyncio.run(run_batches())
 
     print("\n📊 --- [总结] ---")
+    print(f" total ingestion time: {sum(ingestion_time)} seconds")
     print(f" average ingestion time: {sum(ingestion_time) / len(ingestion_time) if ingestion_time else 0}")
+    print(f" total retrieval time: {sum(retrieval_time)} seconds")
     print(f" retrieval time: {sum(retrieval_time) / len(retrieval_time) if retrieval_time else 0}")
+    print(f" total NebulaGraph IO count: {total_IO_count}")
     # mem_graph.load_graph_gexf(f"subgraph/memory_graph_{args.dataset}.gexf")
     # mem_graph.show_status()
     # asyncio.run(run_retrieval(llm, args.dataset, questions, answers, texts))
 
-# python -m database.db-tool --db wikimultihopqa --clear vector
-# python -m database.db-tool --db entity_index_wikimultihopqa --clear vector
-# CUDA_VISIBLE_DEVICES="1" python -m src.graphrag --start 0 --end 300 --dataset wikimultihopqa --backend openai > log/wikimultihopqa_0_300_openai.log
-# tmux new -s wikimultihopqa -d bash -lc 'CUDA_VISIBLE_DEVICES="" python -m src.graphrag --start 0 --end 300 --dataset wikimultihopqa --backend openai > log/wikimultihopqa_0_300_openai.log'
+# python -m database.db-tool --db whoqa --clear vector
+# python -m database.db-tool --db entity_index_whoqa --clear vector
+# CUDA_VISIBLE_DEVICES="0" python -m src.graphrag --start 0 --end 300 --dataset rgb_en_refine --backend openai --agentic --agentic_steps 4 > log/rgb_en_refine_0_300_agentic_4.log
+# tmux new -s whoqa -d bash -lc 'CUDA_VISIBLE_DEVICES="1" python -m src.graphrag --start 0 --end 600 --dataset whoqa --backend openai > log/whoqa_0_600_new.log'

@@ -83,8 +83,6 @@ def generate_specific_question(entity_name, context_text, target_property="occup
         print("Warning: invalid JSON response from LLM, skipping.")
         return ""
     final_question = res_json.get("final_question", "")
-    # 这里模拟 LLM 的返回结果
-    # response = "What was the occupation of the Charles Fox who died at Mount Anville in 1862?" 
     return final_question
 
 def prepare_incremental_experiment_data(whoqa_file_path, output_file_path, num: int = 120):
@@ -127,11 +125,14 @@ def prepare_incremental_experiment_data(whoqa_file_path, output_file_path, num: 
             truth_answers = answers_dict.get(str(target_idx), [])
             if len(truth_answers) > 1: # 多个列表组合成一个
                 truth_answers = [item for sublist in truth_answers for item in sublist]
-            if not isinstance(truth_answers, list):
+            if not isinstance(truth_answers[0], list):
                 truth_answers = [truth_answers]
             
             # 核心：生成特指问题
             specific_question = generate_specific_question(clean_name, target_text, target_property, truth_answers)
+            if not specific_question:
+                print(f"Failed to generate question for {clean_name}, skipping.")
+                continue
             
             experiment_cases.append({
                 "target_entity": clean_name,
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     # 假设你的附件数据存为 whoqa_sample.json
     data_file = os.path.join(WHOQA_DATAPATH, "WhoQA.json")
     assert file_exist(data_file), f"{data_file} not exist!"
-    output_file = "whoqa_experiment_dataset.json"
-    prepare_incremental_experiment_data(data_file, output_file, num=120)
+    output_file = "whoqa_experiment_dataset_600.json"
+    prepare_incremental_experiment_data(data_file, output_file, num=600)
 
     # CUDA_VISIBLE_DEVICES="1" python -m data.whoqa_process_qa

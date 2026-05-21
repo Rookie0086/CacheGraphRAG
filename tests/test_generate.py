@@ -61,7 +61,7 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
     #     )
 	llm = LLMEnv(
 		backend="openai", 
-		model="gpt-4.1-mini", 
+		model="gpt-4o-mini", 
 		api_key="sk-of-OUbbhtqucYYpKtappAhGLNhviBsIiNEgiwzxwiwOpiEgxgtNXMzrPRAVauVBvalD",
 		base_url="https://api.ofox.ai/v1",
 		max_tokens=1024, 
@@ -82,28 +82,38 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
 		gold = item.get("answer", "")
 		# if not isinstance(gold[0], list):
 		# 	gold = [gold]
-		chunk_list = item.get("retrieval", {}).get("chunks", [])
-		context_parts = []
 		prompt = ""
+		pred = ""
 		pred_str = ""
-		for cid in chunk_list:
-			text_info = chunk_text_map.get(cid)
-			if not text_info:
-				continue
-			ts_value = text_info.get("ts") or "UNKNOWN"
-			context_parts.append(f"[{cid} | ts={ts_value}] {text_info['text']}")
-		context = "\n\n".join(context_parts)
-		generate_time = -time.time()
-		if not context:
-			pred = "I don't know."
-			pred_str = pred
+		chunk_list = item.get("retrieval", {}).get("chunks", [])
+		agentic_answer = item.get("retrieval", {}).get("final_answer", "")
+		if agentic_answer:
+			pred_str = str(agentic_answer).strip()
+			subquestions = item.get("retrieval", {}).get("agentic_steps", [])
+			subqa = [f"subquestions:{item.get('question', '')}" + "\n" + f"subanswer:{item.get('answer', '')}"+ "\n" for item in subquestions]
+
 		else:
-			prompt = prompt_answer_with_chunks_str.format(
-				query=query,
-				context=context,
-			)
-			pred = llm.complete(prompt=prompt) or ""
-			pred_str = _extract_final_answer(pred)
+			context_parts = []
+			for cid in chunk_list:
+				text_info = chunk_text_map.get(cid)
+				if not text_info:
+					continue
+				ts_value = text_info.get("ts") or "UNKNOWN"
+				context_parts.append(f"[{cid} | ts={ts_value}] {text_info['text']}")
+			context = "\n\n".join(context_parts)
+			generate_time = -time.time()
+			if not context:
+				pred = "I don't know."
+				pred_str = pred
+			else:
+				prompt = prompt_answer_with_chunks_str.format(
+					query=query,
+					context=context,
+				)
+				pred = llm.complete(prompt=prompt) or ""
+				pred_str = _extract_final_answer(pred)
+			generate_time += time.time()
+			all_time.append(generate_time)
 		
 		label = checkanswer(pred_str, gold)
 		all_labels.append(label)
@@ -111,13 +121,12 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
 		bert_score = bert(pred_str, gold)
 		all_bert_scores.append(bert_score)
 		avg_bert_score = np.average(all_bert_scores)
-		generate_time += time.time()
-		all_time.append(generate_time)
 
 		outputs.append(
 			{
 				"query": query,
 				"answer": gold,
+				"subqa": subqa if agentic_answer else [],
                 "prompt": prompt,
 				"pred": pred,
 				"prediction_str": pred_str,
@@ -125,8 +134,7 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
 				"accuracy_so_far": accuracy,
 				"bert_score": bert_score,
 				"bert_score_so_far": avg_bert_score,
-				"generate_time": generate_time,
-				"avg_generate_time": np.average(all_time),
+				# "avg_generate_time": np.average(all_time),
 				"chunk_ids": chunk_list,
 			}
 		)
@@ -194,7 +202,7 @@ if __name__ == "__main__":
 	parser.add_argument("--backend", type=str, default="openai")
 	args = parser.parse_args()
 	run_generate(args.dataset, args.start, args.end, args.backend)
-# CUDA_VISIBLE_DEVICES="1" python -m tests.test_generate --dataset musique --start 0 --end 300 --backend openai
+# CUDA_VISIBLE_DEVICES="1" python -m tests.test_generate --dataset whoqa --start 0 --end 600 --backend openai
 # python -m scripts.merge_retrieval_results \
 #   --inputs data/retrieval_results_musique_0_30.json \
 #            data/retrieval_results_musique_30_60.json \

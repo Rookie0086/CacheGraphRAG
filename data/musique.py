@@ -64,13 +64,13 @@ def get_musique_info(limit: Optional[int] = None) -> Dict[str, List]:
         if not isinstance(data, dict):
             continue
         question = data.get("question", "")
-        answer = data.get("answer", "")
+        answer = [data.get("answer", "")]
         aliases = data.get("answer_aliases", []) or []
         if aliases:
-            combined = [str(answer)] + [str(a) for a in aliases if str(a)]
+            combined = [answer + [str(a) for a in aliases if str(a)]]
             answers.append(combined)
         else:
-            answers.append(str(answer))
+            answers.append(answer)
         questions.append(str(question))
         paragraphs = data.get("paragraphs")
         context = data.get("context") if paragraphs is None else paragraphs

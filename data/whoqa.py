@@ -3,12 +3,12 @@ import os
 from typing import Dict, List
 
 from data.paths import WHOQA_DATAPATH
-from utils.base import file_exist
+from utils.base import file_exist,save_to_json
 
 
 def _join_candidate_texts(candidate_texts) -> str:
 	if isinstance(candidate_texts, list):
-		return " ".join(str(t) for t in candidate_texts if str(t))
+		return "\n\n".join(str(t) for t in candidate_texts if str(t))
 	if candidate_texts is None:
 		return ""
 	return str(candidate_texts)
@@ -23,7 +23,7 @@ def get_whoqa_ex_info(limit: int = 10, update: bool = False) -> Dict[str, List]:
 	- phase_2_data: 用于第二阶段增量更新的目标项文本列表
 	- ground_truth: 目标实体的正确答案列表
 	"""
-	data_file = "data/whoqa_experiment_dataset.json"
+	data_file = "data/whoqa_experiment_dataset_600.json"
 	assert file_exist(data_file), f"{data_file} not exist!"
 
 	texts = []
@@ -94,9 +94,24 @@ def get_whoqa_info(limit: int = 120) -> Dict[str, List]:
 
 
 if __name__ == "__main__":
-	whoqa_info = get_whoqa_info()
+	data_info = get_whoqa_ex_info(limit=600, update=False)
 	print(
-		f"questions {len(whoqa_info['questions'])} ",
-		f"answers {len(whoqa_info['answers'])} ",
-		f"texts {len(whoqa_info['texts'])} ",
+		f"questions {len(data_info['questions'])} ",
+		f"answers {len(data_info['answers'])} ",
+		f"texts {len(data_info['texts'])} ",
+	)
+	questions, answers, texts = (
+        data_info["questions"],
+        data_info["answers"],
+        data_info["texts"],
+    )
+	save_to_json(
+		"data/data_format/qa_pairs_whoqa.json",
+		{
+			"questions": questions[:10],
+			"answers": answers[:10],
+			"texts": texts[:10],
+		},
+		indent=2,
+		info=False
 	)

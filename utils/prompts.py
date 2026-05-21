@@ -1,68 +1,3 @@
-alignment_prompt = """
-#### Task
-
-Perform **Entity Alignment** and **Relation Alignment** across all collections of triplets provided in the nested list. Ensure that identical entities and relationships are standardized consistently across the entire input, not just within individual collections.
-
-- **Entity Alignment**: Identify and merge different expressions of the same entity. Ensure all variations of an entity are unified into a single, standardized name.
-- **Relation Alignment**: Identify and merge different expressions of the same relationship. Ensure all variations of a relationship are unified into a single, standardized form.
-
-**Input Format**:
-The input is a nested list, where each sub-list is a collection of triplets. Each triplet follows this format:
-`["Subject Entity", "Relation", "Object Entity"]`
-
-Example **Input**:
-[
-    [
-        ["International Business Machines Corporation",
-            "headquartered_in", "New York"],
-        ["IBM", "based_in", "New York"],
-        ["International Business Machines Corporation", "owns", "Red Hat"]
-    ],
-    [
-        ["IBM", "acquired", "Red Hat"],
-        ["IBM", "has_location", "Armonk"]
-    ]
-]
-
-
-**Expected Output Format**:
-- Each collection has aligned entities and relationships, ensuring consistency across all collections.
-- All variations of the same **entity** are unified into a single standardized name across all collections.
-- All variations of the same **relationship** are unified into a single standardized form across all collections.
-- **The number of triplets in the output must match the number in the input, and the order of triplets in the output must align exactly with the order in the input.**
-- Ensure that the output is **valid JSON** format.
-
-Example **Output**:
-```json
-{{
-"aligned_triplets": [
-    [
-        ["IBM", "headquartered_in", "New York"],
-        ["IBM", "headquartered_in", "New York"],
-        ["IBM", "owns", "Red Hat"]
-    ],
-    [
-        ["IBM", "owns", "Red Hat"],
-        ["IBM", "has_location", "Armonk"]
-    ]
-]
-}}
-```
-
-
-### Task Instructions:
-1. Identify different expressions for the same entity (e.g., "IBM" and "International Business Machines Corporation") across all collections, and standardize them to one name.
-2. Identify different expressions of the same relationship (e.g., "headquartered_in" and "based_in") across all collections, and standardize them to one form.
-3. Return the aligned result as a **valid JSON object** with the key `aligned_triplets` containing the aligned triplets, ensuring entities and relationships are consistent across all collections
-4. **The output must exactly match the input in terms of the number and order of triplets**. Provide only the final aligned result—no explanation or analysis.
-
-**Input**:
-{input_data}
-
-**Output**:
-"""
-
-
 prompt_extract_triplest_str = """
     You are an expert Knowledge Graph Engineer. Your task is to extract a knowledge graph from the provided text chunk.
 
@@ -97,12 +32,16 @@ prompt_extract_triplest_str = """
 """
 
 prompt_extract_entities_str = """
-    You are an expert Knowledge Graph Engineer. Your task is to extract all entities from the provided text .
+    You are an expert Knowledge Graph Engineer. Your task is to extract all entities and implied relations from the provided text.
 
     ### Guidelines:
-     **Entities **: Identify key entities.
+     **Entities**: Identify key entities.
     - `id`: A concise, unique name (e.g., "Elon Musk" not "he").
     - `desc`: A brief keyword-rich summary (max 20 words) for context (e.g., "CEO of Tesla and SpaceX"), if the context is inadequate, use "UNKNOWN".
+
+     **Relations**: Identify the key relation phrases implied by the query.
+    - Output a list of short relation phrases (e.g., "acquired", "CEO of", "born in", "located in").
+    - Do not include entity names in the relation strings.
 
     ### Constraints:
     - **Output Format**: Return strictly valid JSON.
@@ -111,14 +50,71 @@ prompt_extract_entities_str = """
     {{
     "entities": [
         {{"id": "string", "type": "string", "desc": "string"}}
-    ]
+    ],
+    "relations": ["string"]
     }}
-    Text :
+    Text:
     {context}
 
-    Extract the entities following the schema.  
+    Extract the entities and relations following the schema.  
 """
 
+prompt_plan_first_step_str = """
+    You are a decomposition assistant. Decide whether the question needs multi-hop reasoning. 
+	If yes, provide the first subquestion needed to find an intermediate entity or fact. 
+	If no, set subquestion to the original question.
+	### Example 1:
+    Question: Why did John Middleton Murry's wife die?
+    JSON: {{"need_multihop": true, "subquestion": "Who is John Middleton Murry's wife?"}}
+
+    ### Example 2:
+    Question: Why did Katherine Mansfield die?
+    JSON: {{"need_multihop": false, "subquestion": "Why did Katherine Mansfield die?"}}
+
+    ### Question: 
+    {query}
+
+	### Output Format (Strictly JSON):
+    {{
+        "need_multihop": true/false,
+        "subquestion": "string"
+    }}
+"""
+
+prompt_plan_next_step_str = """
+    You are an expert reasoning agent. Your goal is to answer the Original Question step by step.
+	### Example:
+    Which film has the director died later, Lost In The Stratosphere or Blind Man'S Eyes?
+    subquestion1: Who is the director of Lost In The Stratosphere? answer1: Melville W. Brown
+    subquestion2: When did Melville W. Brown die? answer2: January 31, 1938
+    subquestion3: Who is the director of Blind Man'S Eyes? answer3: John Ince
+    subquestion4: When did John Ince die? answer4: April 10, 1947
+    final_answer: Blind Man'S Eyes.
+
+    ### History of investigation so far:
+    <history>
+    {history_str}
+    </history>
+
+    ### Original Question: 
+    {query}
+
+	### INSTRUCTIONS:
+	1. Look at the history. Do you have enough combined information to answer the Original Question?
+	2. If YES: set "is_final" to true and provide the "final_answer".
+	3. If NO: provide the next "subquestion".
+	4. **CRITICAL RULES:** 
+		- DO NOT ask a question you have already asked in the history.
+		- If a previous result was 'UNKNOWN' or 'I don't know', DO NOT ask about it again. Try a different angle or conclude with the information you have.
+	
+    ### Output Format (Strictly JSON):
+    {{
+        "is_final": true/false,
+        "subquestion": "string",
+        "final_answer": "string"
+    }}
+	
+"""
 # prompt_answer_with_chunks_str = """
 # You are an expert question-answering assistant. Your task is to answer the user's question based strictly on the provided context.
 
@@ -202,3 +198,15 @@ You are an expert question-answering assistant. Your task is to answer the user'
 #   "final_answer": "Complete and concise noun or short phrase here, or 'I don't know.' if the text lacks the answer."
 # }}
 # """
+
+prompt_sub_answer_lite_str = """
+You are a quick search assistant. Please answer the sub-questions directly based on the context.
+
+The output format must be JSON: {"answer": "short answer", "found": true/false}
+If not mentioned in the context, set "found" to false. Do not make complex inferences or citations.
+### Context:
+{context}
+
+### Sub-Question:
+{query}
+"""

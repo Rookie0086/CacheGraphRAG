@@ -1,0 +1,745 @@
+[
+  {
+    "query": "When did Lothair Ii's mother die?",
+    "answer": "20 March 851",
+    "subqa": [
+      "subquestions:Who was Lothair II's mother?\nsubanswer:Ermengarde of Tours\n",
+      "subquestions:When did Ermengarde of Tours die?\nsubanswer:20 March 851\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Lothair II's mother, Ermengarde of Tours, died on 20 March 851.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 1.0,
+    "bert_score": 0.3169747591018677,
+    "bert_score_so_far": 0.3169747591018677,
+    "chunk_ids": [
+      "chunk_da71bf244fb0",
+      "chunk_a61cb72d3e7f",
+      "chunk_dab4dedcd03b",
+      "chunk_aede0f8dae26",
+      "chunk_9ba5191767e2",
+      "chunk_ed02a6562efd",
+      "chunk_3a70648be018",
+      "chunk_d48f395f1948"
+    ]
+  },
+  {
+    "query": "Which film was released first, Aas Ka Panchhi or Phoolwari?",
+    "answer": "Phoolwari",
+    "subqa": [
+      "subquestions:What are the release years of Aas Ka Panchhi and Phoolwari?\nsubanswer:Aas Ka Panchhi (1961), Phoolwari (1946)\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Phoolwari was released first in 1946, followed by Aas Ka Panchhi in 1961.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 1.0,
+    "bert_score": 0.5940426588058472,
+    "bert_score_so_far": 0.4555087089538574,
+    "chunk_ids": [
+      "chunk_72484a61730d",
+      "chunk_340f7a2b5ca5",
+      "chunk_f484cfc77d7b"
+    ]
+  },
+  {
+    "query": "What is the place of birth of the performer of song Changed It?",
+    "answer": "Port of Spain",
+    "subqa": [
+      "subquestions:Who is the performer of the song Changed It?\nsubanswer:Nicki Minaj and Lil Wayne\n",
+      "subquestions:What is the place of birth of Nicki Minaj?\nsubanswer:Saint James, Port of Spain\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Saint James, Port of Spain",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 1.0,
+    "bert_score": 0.7435847520828247,
+    "bert_score_so_far": 0.5515340566635132,
+    "chunk_ids": [
+      "chunk_ad503d76764e",
+      "chunk_65cdc11407c3",
+      "chunk_745728ac0648",
+      "chunk_aede0f8dae26",
+      "chunk_3f12e6583eed",
+      "chunk_75d8b3e3edc2",
+      "chunk_8d15f0db2e5e"
+    ]
+  },
+  {
+    "query": "Are Marufabad and Nasamkhrali both located in the same country?",
+    "answer": "no",
+    "subqa": [
+      "subquestions:In which countries are Marufabad and Nasamkhrali located?\nsubanswer:Iran and Georgia\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "No, Marufabad is located in Iran and Nasamkhrali is located in Georgia, so they are not in the same country.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 1.0,
+    "bert_score": 0.102991983294487,
+    "bert_score_so_far": 0.43939853832125664,
+    "chunk_ids": [
+      "chunk_6c218b14fbc1",
+      "chunk_b5ab265950cc",
+      "chunk_2d740e938bbe",
+      "chunk_05e0a302e3f6",
+      "chunk_ca9f54002297"
+    ]
+  },
+  {
+    "query": "Which film has the director who is older, God'S Gift To Women or Aldri Annet Enn Bråk?",
+    "answer": "God'S Gift To Women",
+    "subqa": [
+      "subquestions:Who directed God'S Gift To Women and Aldri Annet Enn Bråk?\nsubanswer:Michael Curtiz directed God's Gift to Women; Edith Carlmar directed Aldri annet enn bråk.\n",
+      "subquestions:What are the birth years of Michael Curtiz and Edith Carlmar?\nsubanswer:Michael Curtiz: 1886, Edith Carlmar: 1911\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "God's Gift to Women has the older director, Michael Curtiz, born in 1886, compared to Edith Carlmar, who was born in 1911.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 1.0,
+    "bert_score": 0.38620525598526,
+    "bert_score_so_far": 0.42875988185405733,
+    "chunk_ids": [
+      "chunk_db1d375397f5",
+      "chunk_3ae4fac22d4b",
+      "chunk_cceef32019cc",
+      "chunk_cc47631d272f",
+      "chunk_fac020ac8ade",
+      "chunk_9ea896b34c26",
+      "chunk_a2c87c34e7a1",
+      "chunk_0c2188274cbc"
+    ]
+  },
+  {
+    "query": "Which film whose director was born first, El Tonto or The Heart Of Doreon?",
+    "answer": "The Heart Of Doreon",
+    "subqa": [
+      "subquestions:Who directed El Tonto and when was the director born?\nsubanswer:I don't know.\n",
+      "subquestions:Who directed The Heart Of Doreon and when was the director born?\nsubanswer:Robert North Bradbury, born March 23, 1886\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "I cannot determine which film's director was born first, as I do not have the birth date of the director of El Tonto.",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.8333333333333334,
+    "bert_score": 0.08179988712072372,
+    "bert_score_so_far": 0.3709332160651684,
+    "chunk_ids": [
+      "chunk_9c39623ad5e2",
+      "chunk_c2abacd3d7e1",
+      "chunk_2766fd60ba38",
+      "chunk_de7e3bf152c7",
+      "chunk_60a732e2632d",
+      "chunk_9ba5191767e2",
+      "chunk_0c2188274cbc",
+      "chunk_44ecfb58c2dd"
+    ]
+  },
+  {
+    "query": "Who was born first out of Aivar Kuusmaa and Andy Summers?",
+    "answer": "Andy Summers",
+    "subqa": [
+      "subquestions:What are the birth years of Aivar Kuusmaa and Andy Summers?\nsubanswer:Aivar Kuusmaa: 1967, Andy Summers: 1942\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Andy Summers was born first, in 1942, while Aivar Kuusmaa was born in 1967.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.8571428571428571,
+    "bert_score": 0.5281078219413757,
+    "bert_score_so_far": 0.39338673119034084,
+    "chunk_ids": [
+      "chunk_15a82f6dfb10",
+      "chunk_51526b242cbe",
+      "chunk_292f5fec612c",
+      "chunk_989efa9adf57",
+      "chunk_8e07b866045d",
+      "chunk_ed02a6562efd"
+    ]
+  },
+  {
+    "query": "Who is Raghnall Mac Ruaidhrí's paternal grandfather?",
+    "answer": "Ailéan mac Ruaidhrí",
+    "subqa": [
+      "subquestions:Who is Raghnall Mac Ruaidhrí's father?\nsubanswer:Ruaidhrí Mac Ruaidhrí\n",
+      "subquestions:Who is Ruaidhrí Mac Ruaidhrí's father?\nsubanswer:Ailéan mac Ruaidhrí\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Ailéan mac Ruaidhrí",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.875,
+    "bert_score": 1.0000001192092896,
+    "bert_score_so_far": 0.46921340469270945,
+    "chunk_ids": [
+      "chunk_0bcf778b2c3e",
+      "chunk_a72a55be9ff8",
+      "chunk_9e0816b81199",
+      "chunk_35a639769459",
+      "chunk_f73153933664",
+      "chunk_de7e3bf152c7",
+      "chunk_770668b751a6",
+      "chunk_b06b16325340"
+    ]
+  },
+  {
+    "query": "Do both films Interview With A Hitman and The Last Coupon have the directors from the same country?",
+    "answer": "yes",
+    "subqa": [
+      "subquestions:What are the countries of origin for the directors of Interview With A Hitman and The Last Coupon?\nsubanswer:United Kingdom\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Yes, both films Interview With A Hitman and The Last Coupon have directors from the same country, which is the United Kingdom.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.8888888888888888,
+    "bert_score": 0.2022801786661148,
+    "bert_score_so_far": 0.43955415735642117,
+    "chunk_ids": [
+      "chunk_8e07b866045d",
+      "chunk_43b35076074c",
+      "chunk_9e003242ca6e",
+      "chunk_2766fd60ba38",
+      "chunk_0082b602afe9",
+      "chunk_a5ac864d0433"
+    ]
+  },
+  {
+    "query": "What nationality is the director of film Blood Street?",
+    "answer": "Chinese",
+    "subqa": [
+      "subquestions:Who is the director of the film Blood Street?\nsubanswer:Leo Fong\n",
+      "subquestions:What is the nationality of Leo Fong?\nsubanswer:Chinese American\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Chinese American",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.9,
+    "bert_score": 0.8661713004112244,
+    "bert_score_so_far": 0.4822158716619015,
+    "chunk_ids": [
+      "chunk_d471d22320ca",
+      "chunk_b311e4fb4f20",
+      "chunk_775776c29c20"
+    ]
+  },
+  {
+    "query": "What is the place of birth of the director of film Gaby: A True Story?",
+    "answer": "Mexico City",
+    "subqa": [
+      "subquestions:Who is the director of the film Gaby: A True Story?\nsubanswer:Luis Mandoki\n",
+      "subquestions:What is the place of birth of Luis Mandoki?\nsubanswer:Mexico City\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Mexico City",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.9090909090909091,
+    "bert_score": 1.0000001192092896,
+    "bert_score_so_far": 0.5292871668934822,
+    "chunk_ids": [
+      "chunk_5d269a24b2d6",
+      "chunk_0f300c15d482",
+      "chunk_cceef32019cc",
+      "chunk_de7e3bf152c7",
+      "chunk_b06b16325340"
+    ]
+  },
+  {
+    "query": "Are Vasilyevsky Island and Preobrazheniya Island located in the same country?",
+    "answer": "yes",
+    "subqa": [
+      "subquestions:In which country is Vasilyevsky Island located?\nsubanswer:Russia\n",
+      "subquestions:In which country is Preobrazheniya Island located?\nsubanswer:Russia\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Yes, Vasilyevsky Island and Preobrazheniya Island are located in the same country, Russia.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.9166666666666666,
+    "bert_score": 0.1416337490081787,
+    "bert_score_so_far": 0.49698271540304023,
+    "chunk_ids": [
+      "chunk_9dc157cc1bf9",
+      "chunk_c3597c55d461",
+      "chunk_6394e941eef0"
+    ]
+  },
+  {
+    "query": "What nationality is the performer of song When The Stars Go Blue?",
+    "answer": "America",
+    "subqa": [
+      "subquestions:Who performed the song When The Stars Go Blue?\nsubanswer:Ryan Adams\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Ryan Adams is American.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.9230769230769231,
+    "bert_score": 0.31727057695388794,
+    "bert_score_so_far": 0.48315870475310546,
+    "chunk_ids": [
+      "chunk_72e27faee464",
+      "chunk_3e4eedee967f",
+      "chunk_75d8b3e3edc2"
+    ]
+  },
+  {
+    "query": "Who is the child of the performer of song Me And Bobby Mcgee?",
+    "answer": "Dean Miller",
+    "subqa": [
+      "subquestions:Who performed the song Me And Bobby McGee?\nsubanswer:Janis Joplin\n",
+      "subquestions:Who is Janis Joplin's child?\nsubanswer:I don't know.\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Janis Joplin did not have any children.",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.8571428571428571,
+    "bert_score": 0.07821303606033325,
+    "bert_score_so_far": 0.45423401413219316,
+    "chunk_ids": [
+      "chunk_745728ac0648",
+      "chunk_ae08d05df94d",
+      "chunk_821feae288f8",
+      "chunk_8d15f0db2e5e",
+      "chunk_b5f70251aa1d",
+      "chunk_76f9a97aa3c9"
+    ]
+  },
+  {
+    "query": "Where was the place of death of Maurice, Prince Of Orange's father?",
+    "answer": "Delft",
+    "subqa": [
+      "subquestions:Who was Maurice, Prince Of Orange's father?\nsubanswer:William the Silent\n",
+      "subquestions:Where did William the Silent die?\nsubanswer:Delft\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Delft",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.8666666666666667,
+    "bert_score": 1.0,
+    "bert_score_so_far": 0.49061841319004695,
+    "chunk_ids": [
+      "chunk_10e51b9ff05f",
+      "chunk_4abd5c20c3f8",
+      "chunk_87bba674ead6",
+      "chunk_aede0f8dae26",
+      "chunk_d2683b27209b",
+      "chunk_9ba5191767e2",
+      "chunk_baeadba253c4",
+      "chunk_7f36e96eb812"
+    ]
+  },
+  {
+    "query": "Which country Aleksander Koniecpolski (1620–1659)'s father is from?",
+    "answer": "Polish-Lithuanian Commonwealth",
+    "subqa": [
+      "subquestions:What is the nationality or country of origin of Aleksander Koniecpolski's father?\nsubanswer:Polish\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Poland",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.8125,
+    "bert_score": 0.6539990901947021,
+    "bert_score_so_far": 0.5008297055028379,
+    "chunk_ids": [
+      "chunk_dc04265bf083",
+      "chunk_e5ee64eb2cb2",
+      "chunk_0c7d37a8c654",
+      "chunk_f73153933664",
+      "chunk_de7e3bf152c7",
+      "chunk_b06b16325340"
+    ]
+  },
+  {
+    "query": "What is the date of death of the director of film Madame La Presidente?",
+    "answer": "10 August 1960",
+    "subqa": [
+      "subquestions:Who is the director of the film Madame La Presidente?\nsubanswer:Frank Lloyd\n",
+      "subquestions:What is the date of death of Frank Lloyd?\nsubanswer:August 10, 1960\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "August 10, 1960",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.7647058823529411,
+    "bert_score": 0.9811262488365173,
+    "bert_score_so_far": 0.5290824433459955,
+    "chunk_ids": [
+      "chunk_2388ce878290",
+      "chunk_28c772518b34",
+      "chunk_c2abacd3d7e1",
+      "chunk_6a3d3722df96",
+      "chunk_d88817b7b518",
+      "chunk_821feae288f8",
+      "chunk_3d3f365ca1ce"
+    ]
+  },
+  {
+    "query": "Do both directors of films Wrong Turn 5: Bloodlines and Dark River (2017 Film) have the same nationality?",
+    "answer": "no",
+    "subqa": [
+      "subquestions:What are the nationalities of the directors of Wrong Turn 5: Bloodlines and Dark River (2017 Film)?\nsubanswer:American (Declan O'Brien), British (Clio Barnard)\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "No, the directors of Wrong Turn 5: Bloodlines and Dark River do not have the same nationality; one is American and the other is British.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.7777777777777778,
+    "bert_score": 0.1377423107624054,
+    "bert_score_so_far": 0.5073413248691294,
+    "chunk_ids": [
+      "chunk_dae74953bcdc",
+      "chunk_d2683b27209b",
+      "chunk_9ba5191767e2",
+      "chunk_6df8437c352e",
+      "chunk_3306f0a24826",
+      "chunk_2766fd60ba38"
+    ]
+  },
+  {
+    "query": "Which film has the director who died first, The Goose Woman or You Can No Longer Remain Silent?",
+    "answer": "You Can No Longer Remain Silent",
+    "subqa": [
+      "subquestions:Who directed The Goose Woman and who directed You Can No Longer Remain Silent?\nsubanswer:Clarence Brown directed The Goose Woman; Robert A. Stemmle directed You Can No Longer Remain Silent.\n",
+      "subquestions:When did Clarence Brown and Robert A. Stemmle die?\nsubanswer:Clarence Brown: August 17, 1987; Robert A. Stemmle: February 24, 1974\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "You Can No Longer Remain Silent has the director who died first, as Robert A. Stemmle died on February 24, 1974, while Clarence Brown, the director of The Goose Woman, died later on August 17, 1987.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.7894736842105263,
+    "bert_score": 0.5717548727989197,
+    "bert_score_so_far": 0.5107315116022763,
+    "chunk_ids": [
+      "chunk_adf4b4b90255",
+      "chunk_321f26e7a7be",
+      "chunk_76fd71d0ac42",
+      "chunk_f484cfc77d7b",
+      "chunk_f766922c1480",
+      "chunk_d88817b7b518"
+    ]
+  },
+  {
+    "query": "Where was the director of film The Private Life Of Cinema born?",
+    "answer": "Montreal, Quebec",
+    "subqa": [
+      "subquestions:Who is the director of the film The Private Life Of Cinema?\nsubanswer:Denys Desjardins\n",
+      "subquestions:Where was Denys Desjardins born?\nsubanswer:Montreal, Quebec\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Denys Desjardins, the director of the film The Private Life Of Cinema, was born in Montreal, Quebec.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.8,
+    "bert_score": 0.31865644454956055,
+    "bert_score_so_far": 0.5011277582496405,
+    "chunk_ids": [
+      "chunk_a5ac864d0433",
+      "chunk_2766fd60ba38",
+      "chunk_775776c29c20",
+      "chunk_cd3070a2305b",
+      "chunk_3c98e67bf85c"
+    ]
+  },
+  {
+    "query": "Where did Coulson Wallop's father study?",
+    "answer": "Oxford",
+    "subqa": [
+      "subquestions:Who is Coulson Wallop's father?\nsubanswer:John Wallop, 2nd Earl of Portsmouth\n",
+      "subquestions:Where did John Wallop, 2nd Earl of Portsmouth study?\nsubanswer:I don't know.\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Coulson Wallop's father, John Wallop, 2nd Earl of Portsmouth, is known to have studied at Oxford University.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.8095238095238095,
+    "bert_score": 0.3928074538707733,
+    "bert_score_so_far": 0.49596964851731346,
+    "chunk_ids": [
+      "chunk_833bd276e5ec",
+      "chunk_b6ea43d9e174",
+      "chunk_f73153933664",
+      "chunk_893a81cb4d91",
+      "chunk_43971e55be56",
+      "chunk_de7e3bf152c7",
+      "chunk_e37edce88fdb"
+    ]
+  },
+  {
+    "query": "Why did John Middleton Murry's wife die?",
+    "answer": "tuberculosis",
+    "subqa": [
+      "subquestions:What were the circumstances surrounding the death of John Middleton Murry's wife?\nsubanswer:I don't know.\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "I do not have enough information to determine the cause of John Middleton Murry's wife's death.",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.7727272727272727,
+    "bert_score": 0.2046075314283371,
+    "bert_score_so_far": 0.48272591592235997,
+    "chunk_ids": [
+      "chunk_bc28b2315eac",
+      "chunk_3c30373e617e",
+      "chunk_d88817b7b518",
+      "chunk_616403321298",
+      "chunk_bb0e378938d9",
+      "chunk_de7e3bf152c7"
+    ]
+  },
+  {
+    "query": "Where was the composer of film Billy Elliot born?",
+    "answer": "Southampton, Hampshire",
+    "subqa": [
+      "subquestions:Who is the composer of the film Billy Elliot?\nsubanswer:Stephen Warbeck\n",
+      "subquestions:Where was Stephen Warbeck born?\nsubanswer:Southampton, Hampshire\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Stephen Warbeck was born in Southampton, Hampshire.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.782608695652174,
+    "bert_score": 0.5710424780845642,
+    "bert_score_so_far": 0.48656576645115146,
+    "chunk_ids": [
+      "chunk_2e4f3a48015d",
+      "chunk_97d43413e94f",
+      "chunk_e339c57adb7a",
+      "chunk_146a3237c897",
+      "chunk_43265c29ccfb",
+      "chunk_ed02a6562efd",
+      "chunk_10e51b9ff05f"
+    ]
+  },
+  {
+    "query": "What is the place of birth of Lisbeth Palme's husband?",
+    "answer": "Stockholm",
+    "subqa": [
+      "subquestions:What is the name of Lisbeth Palme's husband?\nsubanswer:Olof Palme\n",
+      "subquestions:What is the place of birth of Olof Palme?\nsubanswer:I don't know.\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Olof Palme was born in Stockholm, Sweden.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.7916666666666666,
+    "bert_score": 0.43236902356147766,
+    "bert_score_so_far": 0.4843075688307484,
+    "chunk_ids": [
+      "chunk_f766922c1480",
+      "chunk_9f874f7a1547",
+      "chunk_372f1f000bba",
+      "chunk_90349ad2d885",
+      "chunk_fac020ac8ade",
+      "chunk_cceef32019cc",
+      "chunk_06e2bb43bd12"
+    ]
+  },
+  {
+    "query": "Which film came out first, 3 Dots or Dying God?",
+    "answer": "Dying God",
+    "subqa": [
+      "subquestions:What are the release years of the films 3 Dots and Dying God?\nsubanswer:3 Dots (2013), Dying God (2008)\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Dying God came out first in 2008, followed by 3 Dots in 2013.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.8,
+    "bert_score": 0.4242982864379883,
+    "bert_score_so_far": 0.48190719753503797,
+    "chunk_ids": [
+      "chunk_0c780e2dd414",
+      "chunk_4345ef0e6c4c",
+      "chunk_9ba5191767e2",
+      "chunk_d2683b27209b",
+      "chunk_6df8437c352e",
+      "chunk_9aaf4e67886c"
+    ]
+  },
+  {
+    "query": "Who is the father-in-law of Sisowath Kossamak?",
+    "answer": "Norodom Sutharot",
+    "subqa": [
+      "subquestions:Who is the spouse of Sisowath Kossamak?\nsubanswer:King Norodom Suramarit\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "King Sisowath is the father-in-law of Sisowath Kossamak.",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.7692307692307693,
+    "bert_score": 0.2872738838195801,
+    "bert_score_so_far": 0.47442130085367423,
+    "chunk_ids": [
+      "chunk_e16c0e152e1c",
+      "chunk_6111b7a17ef5",
+      "chunk_4a1e60b1283f"
+    ]
+  },
+  {
+    "query": "Who is Mugain's mother-in-law?",
+    "answer": "Ness",
+    "subqa": [
+      "subquestions:Who is Mugain's spouse?\nsubanswer:Conchobar mac Nessa\n",
+      "subquestions:Who is Conchobar mac Nessa's mother?\nsubanswer:Ness, daughter of Eochaid Sálbuide\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Mugain's mother-in-law is Ness, daughter of Eochaid Sálbuide.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.7777777777777778,
+    "bert_score": 0.4918580949306488,
+    "bert_score_so_far": 0.4750671080417103,
+    "chunk_ids": [
+      "chunk_60100a136810",
+      "chunk_f73153933664",
+      "chunk_af9d45a69eba",
+      "chunk_f766922c1480",
+      "chunk_4329d58d7a6a",
+      "chunk_321f26e7a7be"
+    ]
+  },
+  {
+    "query": "Where did Theodore Salisbury Woolsey's father study?",
+    "answer": "Yale College",
+    "subqa": [
+      "subquestions:What is the name of Theodore Salisbury Woolsey's father?\nsubanswer:Theodore Dwight Woolsey\n",
+      "subquestions:Where did Theodore Dwight Woolsey study?\nsubanswer:I don't know.\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Theodore Dwight Woolsey studied at Yale University.",
+    "label": [
+      0
+    ],
+    "accuracy_so_far": 0.75,
+    "bert_score": 0.5787706971168518,
+    "bert_score_so_far": 0.4787708076515368,
+    "chunk_ids": [
+      "chunk_7ad4cf83f1a4",
+      "chunk_8541c6c5e7da",
+      "chunk_3d3f365ca1ce",
+      "chunk_f73153933664",
+      "chunk_dae74953bcdc",
+      "chunk_7e277ac1f577"
+    ]
+  },
+  {
+    "query": "What is the place of birth of the director of film The Return Of Swamp Thing?",
+    "answer": "New York",
+    "subqa": [
+      "subquestions:Who is the director of the film The Return Of Swamp Thing?\nsubanswer:Jim Wynorski\n",
+      "subquestions:What is the place of birth of Jim Wynorski?\nsubanswer:Glen Cove, Long Island, New York\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Glen Cove, Long Island, New York",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.7586206896551724,
+    "bert_score": 0.5537916421890259,
+    "bert_score_so_far": 0.48135773298041573,
+    "chunk_ids": [
+      "chunk_4c460f9293b1",
+      "chunk_43971e55be56",
+      "chunk_9cd53fbb49f9",
+      "chunk_2766fd60ba38",
+      "chunk_9ba5191767e2",
+      "chunk_5d269a24b2d6",
+      "chunk_1494c32b71fc",
+      "chunk_ca5235241939",
+      "chunk_d2683b27209b",
+      "chunk_6df8437c352e"
+    ]
+  },
+  {
+    "query": "Where was the place of death of the performer of song I Can'T See Myself Leaving You?",
+    "answer": "Detroit",
+    "subqa": [
+      "subquestions:Who is the performer of the song I Can't See Myself Leaving You?\nsubanswer:Aretha Franklin\n",
+      "subquestions:What is the place of death of Aretha Franklin?\nsubanswer:I don't know.\n"
+    ],
+    "prompt": "",
+    "pred": "",
+    "prediction_str": "Aretha Franklin passed away in Detroit, Michigan.",
+    "label": [
+      1
+    ],
+    "accuracy_so_far": 0.7666666666666667,
+    "bert_score": 0.24453388154506683,
+    "bert_score_so_far": 0.4734636045992374,
+    "chunk_ids": [
+      "chunk_c102c429de75",
+      "chunk_8d15f0db2e5e",
+      "chunk_745728ac0648",
+      "chunk_75d8b3e3edc2",
+      "chunk_03095be841e6",
+      "chunk_ed02a6562efd",
+      "chunk_76f9a97aa3c9",
+      "chunk_262ab94cdecc"
+    ]
+  }
+]

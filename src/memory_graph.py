@@ -37,6 +37,7 @@ class MemoryGraphManager:
         self.threshold = promotion_threshold
         self._id_index = {}
         self.chunk_vector_store = chunk_vector_store
+        self.nebula_IO_count = 0
 
     def _rebuild_id_index(self):
         self._id_index = {}
@@ -266,6 +267,7 @@ class MemoryGraphManager:
     def write_to_persistent_graph(self, subgraph_data: List[Dict]):
         """将晋升的子图写入 NebulaGraph"""
         for data in subgraph_data:
+            self.nebula_IO_count += 1
             chunk_id = data["chunk_id"]
             nodes = data["nodes"]
             edges = data["edges"]

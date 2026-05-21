@@ -257,6 +257,8 @@ def checkanswer(prediction, ground_truth, verbose=False):
     """
     def _normalize_answer(text: str) -> str:
         normalized = text.lower().strip()
+        normalized = re.sub(r"[\"'`]", "", normalized)
+        normalized = normalized.replace("-", " ")
         normalized = re.sub(r"[\.,，。;；:：]", " ", normalized)
         normalized = normalized.rstrip("!?！？")
         normalized = " ".join(normalized.split())

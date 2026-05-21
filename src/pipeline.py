@@ -48,8 +48,8 @@ class DocumentIngestionPipeline:
         
         # 初始化分块器
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=800,
-            chunk_overlap=100,
+            chunk_size=512,# 800
+            chunk_overlap=30,#100
             length_function=len,
             separators=["\n\n", "\n", "。", ".", " ", ""]
         )

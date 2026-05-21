@@ -136,7 +136,16 @@ class HybridRetriever:
                 data["source_chunk"] = ",".join(str(v) for v in data["source_chunk"])
         nx.write_gexf(export_g, path)
 
-    def retrieve_from_memory_graph(self, query_emb: np.ndarray, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_memory_graph(
+        self,
+        query_emb: np.ndarray,
+        entity_name: str,
+        entity_type: str,
+        entity_desc: str,
+        top_entities: int = 5,
+        top_chunks: int = 5,
+        query_relations: List[str] = None,
+    ):
         if not self.memory_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -172,6 +181,29 @@ class HybridRetriever:
             if denom == 0:
                 return 0.0
             return float(np.dot(a, b) / denom)
+
+        relation_texts = [str(r).strip() for r in (query_relations or []) if str(r).strip()]
+        relation_emb_cache = {}
+        query_rel_embs = [
+            np.array(vector_store.embed_model.get_embedding(r), dtype=float)
+            for r in relation_texts
+        ]
+
+        def _relation_match(rel_text: str) -> bool:
+            if not rel_text or not query_rel_embs:
+                return False
+            rel_text = str(rel_text).strip()
+            if not rel_text:
+                return False
+            if rel_text in relation_emb_cache:
+                rel_emb = relation_emb_cache[rel_text]
+            else:
+                rel_emb = np.array(vector_store.embed_model.get_embedding(rel_text), dtype=float)
+                relation_emb_cache[rel_text] = rel_emb
+            for q_emb in query_rel_embs:
+                if _cosine(rel_emb, q_emb) > 0.8:
+                    return True
+            return False
 
         def _node_text(uid) -> str:
             data = graph.nodes.get(uid, {})
@@ -250,6 +282,9 @@ class HybridRetriever:
             chunk = data.get("source_chunk")
             if not chunk:
                 continue
+            rel_text = data.get("relation_type") or data.get("relation")
+            if rel_text and _relation_match(rel_text):
+                add_score([chunk], 1.0)
             if u in base_nodes or v in base_nodes:
                 add_score([chunk], 0.5)
             elif u in first_hop or v in first_hop:
@@ -267,7 +302,16 @@ class HybridRetriever:
             "matched_entities": matched,
         }
 
-    def retrieve_from_persistent_graph(self, query_emb: np.ndarray, entity_name: str, entity_type: str, entity_desc: str, top_entities: int = 5, top_chunks: int = 5):
+    def retrieve_from_persistent_graph(
+        self,
+        query_emb: np.ndarray,
+        entity_name: str,
+        entity_type: str,
+        entity_desc: str,
+        top_entities: int = 5,
+        top_chunks: int = 5,
+        query_relations: List[str] = None,
+    ):
         if not self.persistent_graph:
             return {"chunks": [], "matched_entities": []}
         if not entity_name and not entity_desc:
@@ -324,6 +368,29 @@ class HybridRetriever:
             if denom == 0:
                 return 0.0
             return float(np.dot(a, b) / denom)
+
+        relation_texts = [str(r).strip() for r in (query_relations or []) if str(r).strip()]
+        relation_emb_cache = {}
+        query_rel_embs = [
+            np.array(vector_store.embed_model.get_embedding(r), dtype=float)
+            for r in relation_texts
+        ]
+
+        def _relation_match(rel_text: str) -> bool:
+            if not rel_text or not query_rel_embs:
+                return False
+            rel_text = str(rel_text).strip()
+            if not rel_text:
+                return False
+            if rel_text in relation_emb_cache:
+                rel_emb = relation_emb_cache[rel_text]
+            else:
+                rel_emb = np.array(vector_store.embed_model.get_embedding(rel_text), dtype=float)
+                relation_emb_cache[rel_text] = rel_emb
+            for q_emb in query_rel_embs:
+                if _cosine(rel_emb, q_emb) > 0.8:
+                    return True
+            return False
 
         def _node_text(row: dict) -> str:
             name = row.get("name") or ""
@@ -387,6 +454,18 @@ class HybridRetriever:
             except Exception:
                 return {}
 
+        def _add_relation_match_scores(rows: Dict):
+            rels = rows.get("relation", [])
+            chunks = rows.get("source_chunk", [])
+            for idx, rel in enumerate(rels):
+                if rel is None:
+                    continue
+                if not _relation_match(rel):
+                    continue
+                chunk = chunks[idx] if idx < len(chunks) else None
+                if chunk:
+                    add_score([chunk], 1.0)
+
         def _collect_vids(rows: Dict) -> set:
             vids = set()
             for key in ("src", "dst"):
@@ -448,6 +527,8 @@ class HybridRetriever:
         for chunk in edge_rows_2.get("source_chunk", []):
             if chunk:
                 add_score([chunk], 0.3)
+        _add_relation_match_scores(edge_rows)
+        _add_relation_match_scores(edge_rows_2)
         # for chunk in edge_rows_3.get("source_chunk", []):
         #     if chunk:
         #         add_score([chunk], 0.2)
@@ -462,9 +543,9 @@ class HybridRetriever:
             "matched_entities": matched,
         }
 
-    def _parse_entities_from_llm(self, raw_text: str) -> List[str]:
+    def _parse_entities_from_llm(self, raw_text: str) -> Dict[str, List]:
         if not raw_text:
-            return []
+            return {"entities": [], "relations": []}
         raw_text = raw_text.strip()
         if raw_text.startswith("```"):
             raw_text = raw_text.strip("`")
@@ -473,13 +554,31 @@ class HybridRetriever:
         start = raw_text.find("{")
         end = raw_text.rfind("}")
         if start == -1 or end == -1 or end <= start:
-            return []
+            return {"entities": [], "relations": []}
         try:
             payload = json.loads(raw_text[start : end + 1])
         except json.JSONDecodeError:
-            return []
-        entities = payload.get("entities", [])
-        return entities
+            return {"entities": [], "relations": []}
+        entities = payload.get("entities", []) or []
+        relations_raw = (
+            payload.get("relations")
+            or payload.get("relationship")
+            or payload.get("relationships")
+            or []
+        )
+        relations: List[str] = []
+        if isinstance(relations_raw, str):
+            relations = [r.strip() for r in re.split(r"[;,]", relations_raw) if r.strip()]
+        elif isinstance(relations_raw, list):
+            for rel in relations_raw:
+                if isinstance(rel, str):
+                    if rel.strip():
+                        relations.append(rel.strip())
+                elif isinstance(rel, dict):
+                    value = rel.get("rel") or rel.get("relation") or rel.get("text")
+                    if value:
+                        relations.append(str(value).strip())
+        return {"entities": entities, "relations": relations}
 
     def _get_chunk_text(
         self, chunk_ids: List[str]
@@ -513,7 +612,9 @@ class HybridRetriever:
         # 2. 图检索路 (Graph Retrieval)
         # ==========================================
         raw_response = self.llm.complete(prompt=prompt_extract_entities_str.format(context=query))
-        extracted_entities = self._parse_entities_from_llm(raw_response)
+        parsed = self._parse_entities_from_llm(raw_response)
+        extracted_entities = parsed.get("entities", [])
+        query_relations = parsed.get("relations", [])
         
         memory_res = []
         persistent_res = []
@@ -522,11 +623,27 @@ class HybridRetriever:
 
         for ent in extracted_entities:
             # 检索内存图 
-            m_res = self.retrieve_from_memory_graph(query_emb, ent["id"], ent["type"], ent["desc"], top_entities, top_chunks)
+            m_res = self.retrieve_from_memory_graph(
+                query_emb,
+                ent["id"],
+                ent["type"],
+                ent["desc"],
+                top_entities,
+                top_chunks,
+                query_relations=query_relations,
+            )
             memory_res.append(m_res)           
             
             # 检索持久化图
-            p_res = self.retrieve_from_persistent_graph(query_emb, ent["id"], ent["type"], ent["desc"], top_entities, top_chunks)
+            p_res = self.retrieve_from_persistent_graph(
+                query_emb,
+                ent["id"],
+                ent["type"],
+                ent["desc"],
+                top_entities,
+                top_chunks,
+                query_relations=query_relations,
+            )
             persistent_res.append(p_res)
 
             # 汇总图的chunk分数

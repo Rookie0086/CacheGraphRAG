@@ -45,9 +45,13 @@ def bert(response, ground_truth):
         return 0.0
 
     query_embedding = bert_model.encode(response_texts, convert_to_tensor=True)
-    text_embedding = bert_model.encode(ground_truth_texts, convert_to_tensor=True)
 
-    # Compute the cosine similarity between the query and text
-    cosine_score = util.pytorch_cos_sim(query_embedding, text_embedding)
+    max_score = 0.0
+    for gt in ground_truth_texts:
+        text_embedding = bert_model.encode([gt], convert_to_tensor=True)
+        cosine_score = util.pytorch_cos_sim(query_embedding, text_embedding)
+        score = float(cosine_score.max().item())
+        if score > max_score:
+            max_score = score
 
-    return float(cosine_score.max().item())
+    return max_score
