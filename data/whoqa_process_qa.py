@@ -3,10 +3,10 @@ import re
 import os
 import random
 from typing import Dict, List
-from utils import get_config
-from utils.llm_env import LLMEnv
+from src.utils import get_config
+from src.llm.env import LLMEnv
 from data.paths import WHOQA_DATAPATH
-from utils.base import file_exist
+from src.utils.base import file_exist
 
 config = get_config()
 model_name = "gpt-4o-mini"
@@ -39,7 +39,7 @@ def _extract_json_block(text: str):
 
 def generate_specific_question(entity_name, context_text, target_property="occupation", answer_list=None):
     """
-    使用 LLM 根据上下文生成特指问题，严格防止泄露目标属性。
+    Generate a specific question using LLM based on context, strictly preventing leakage of the target attribute.
     """
     prompt = """
     You are an expert dataset annotator creating rigorous evaluation data for a Knowledge Graph RAG system.
@@ -69,7 +69,7 @@ def generate_specific_question(entity_name, context_text, target_property="occup
     }}
     """
     
-    # 调用你的大模型 (温度设低一点，保证输出稳定)
+    # Call the LLM (set temperature low to ensure stable output)
     response = llm.complete(
         prompt=prompt.format(
             target_property=target_property,
@@ -87,7 +87,7 @@ def generate_specific_question(entity_name, context_text, target_property="occup
 
 def prepare_incremental_experiment_data(whoqa_file_path, output_file_path, num: int = 120):
     """
-    处理 WhoQA 数据，生成用于增量更新实验的结构化数据。
+    Process WhoQA data and generate structured data for incremental update experiments.
     """
     with open(whoqa_file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
@@ -99,36 +99,36 @@ def prepare_incremental_experiment_data(whoqa_file_path, output_file_path, num: 
     sampled_items = random.sample(data_list, sample_size) if sample_size > 0 else []
     
     for data_item in sampled_items:
-        # 解析元数据
+        # Parse metadata
         target_property = data_item.get("question_type_metadata", {}).get("label", "occupation")
         contexts = data_item.get("contexts", [])
         answers_dict = data_item.get("answer_by_context", {})
         
-        # 我们以第一个 entity 作为 Target (C2)，剩下的作为 Distractors (C1)
-        # 在实际批量处理中，你可以循环将每一个 entity 都轮流作为 Target
+        # We use the first entity as the Target (C2) and the rest as Distractors (C1)
+        # In actual batch processing, you can iterate to use each entity as the Target in turn
         if len(contexts) < 2:
             continue
         
         for target_idx, target_context in enumerate(contexts):  
-            # 提取基础信息
+            # Extract basic info
             page_id = target_context["page_id"]
             
-            # 提取纯粹的人名 (去掉括号里的消歧词，例如 "Charles Fox (Irish politician)" -> "Charles Fox")
+            # Extract the pure name (remove disambiguation text in parentheses, e.g. "Charles Fox (Irish politician)" -> "Charles Fox")
             clean_name = re.sub(r'\s*\(.*?\)\s*', '', page_id)
             target_text = target_context["candidate_texts"]
             
-            # 构建 C1 (干扰项集合) 和 C2 (目标项)
+            # Construct C1 (distractor set) and C2 (target)
             distractor_contexts = [c["candidate_texts"] for i, c in enumerate(contexts) if i != target_idx]
             
-            # 获取 Target 的 Ground Truth 答案
-            # 注意：WhoQA 的 answers 字典的 key 对应的是 context_ids 的索引，需要转换
+            # Get the ground truth answer for the Target
+            # Note: the keys in WhoQA's answers dictionary correspond to context_ids indices and need conversion
             truth_answers = answers_dict.get(str(target_idx), [])
-            if len(truth_answers) > 1: # 多个列表组合成一个
+            if len(truth_answers) > 1: # Combine multiple lists into one
                 truth_answers = [item for sublist in truth_answers for item in sublist]
             if not isinstance(truth_answers[0], list):
                 truth_answers = [truth_answers]
             
-            # 核心：生成特指问题
+            # Core: generate the specific question
             specific_question = generate_specific_question(clean_name, target_text, target_property, truth_answers)
             if not specific_question:
                 print(f"Failed to generate question for {clean_name}, skipping.")
@@ -137,22 +137,22 @@ def prepare_incremental_experiment_data(whoqa_file_path, output_file_path, num: 
             experiment_cases.append({
                 "target_entity": clean_name,
                 "specific_question": specific_question,
-                "phase_1_data": distractor_contexts, # 先注入这个建图
-                "phase_2_data": [target_text],       # 再增量注入这个
-                "ground_truth": truth_answers        # 用于自动化评测的正确答案列表
+                "phase_1_data": distractor_contexts, # Inject this first to build the graph
+                "phase_2_data": [target_text],       # Then incrementally inject this
+                "ground_truth": truth_answers        # Correct answer list for automated evaluation
             })
             
             print(f"Generated Question for {clean_name}: {specific_question}")
-            # 为了演示，只处理第一个作为 Target
+            # For demonstration, only process the first one as Target
             break 
 
-    # 保存实验数据
+    # Save experiment data
     with open(output_file_path, 'w', encoding='utf-8') as f:
         json.dump(experiment_cases, f, indent=4, ensure_ascii=False)
     print(f"\\nExperiment dataset saved to {output_file_path}")
 
 if __name__ == "__main__":
-    # 假设你的附件数据存为 whoqa_sample.json
+    # Assume your attached data is stored as whoqa_sample.json
     data_file = os.path.join(WHOQA_DATAPATH, "WhoQA.json")
     assert file_exist(data_file), f"{data_file} not exist!"
     output_file = "whoqa_experiment_dataset_600.json"

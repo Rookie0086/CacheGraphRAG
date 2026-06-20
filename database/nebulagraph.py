@@ -3,21 +3,21 @@ import os
 import re
 import sys
 import time
-
-# from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
+import prettytable
 from nebula3.Config import Config
+from nebula3.data.DataObject import Value, ValueWrapper
+from nebula3.data.ResultSet import ResultSet
 from nebula3.gclient.net import ConnectionPool
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from database.FormatResp import print_resp
-
 # from nebula3.common import *
 # import json
-from utils.base import file_exist, print_text
-from utils.llm_env import EmbeddingEnv
+from src.utils.base import file_exist, print_text
+from src.llm.env import EmbeddingEnv
 
 QUOTE = '"'
 RETRY_TIMES = 3
@@ -32,7 +32,68 @@ logger = logging.getLogger(__name__)
 from string import Template
 
 
+# ── NebulaGraph Result Formatting ──────────────────────────────
+
+_cast_as = {
+    Value.NVAL: "as_null",
+    Value.BVAL: "as_bool",
+    Value.IVAL: "as_int",
+    Value.FVAL: "as_double",
+    Value.SVAL: "as_string",
+    Value.LVAL: "as_list",
+    Value.UVAL: "as_set",
+    Value.MVAL: "as_map",
+    Value.TVAL: "as_time",
+    Value.DVAL: "as_date",
+    Value.DTVAL: "as_datetime",
+    Value.VVAL: "as_node",
+    Value.EVAL: "as_relationship",
+    Value.PVAL: "as_path",
+    Value.GGVAL: "as_geography",
+    Value.DUVAL: "as_duration",
+}
+
+
+def _cast(val: ValueWrapper):
+    _type = val._value.getType()
+    if _type == Value.__EMPTY__:
+        return None
+    if _type in _cast_as:
+        return getattr(val, _cast_as[_type])()
+    if _type == Value.LVAL:
+        return [x.cast() for x in val.as_list()]
+    if _type == Value.UVAL:
+        return {x.cast() for x in val.as_set()}
+    if _type == Value.MVAL:
+        return {k: v.cast() for k, v in val.as_map().items()}
+
+
+def result_to_df(result: ResultSet) -> pd.DataFrame:
+    assert result.is_succeeded()
+    columns = result.keys()
+    d: Dict[str, list] = {}
+    for col_num in range(result.col_size()):
+        col_name = columns[col_num]
+        col_list = result.column_values(col_name)
+        d[col_name] = [x.cast() for x in col_list]
+    return pd.DataFrame.from_dict(d, columns=columns)
+
+
+def print_resp(resp: ResultSet):
+    assert resp.is_succeeded(), resp
+    output_table = prettytable.PrettyTable()
+    output_table.field_names = resp.keys()
+    for recode in resp:
+        value_list = []
+        for col in recode:
+            val = _cast(col)
+            value_list.append(val)
+        output_table.add_row(value_list)
+    print(output_table)
+
+
 class NebulaClient:
+    """Low-level NebulaGraph client wrapper managing connection pool, session, and graph space DDL."""
 
     def __init__(self):
         config = Config()
@@ -47,7 +108,7 @@ class NebulaClient:
             ok = False
 
         if not ok:
-            # 连接池初始化失败，记录警告并将相关属性置为 None，避免后续 close 调用出现 AttributeError
+            # Connection pool initialization failed, log warning and set related attributes to None to avoid AttributeError on subsequent close calls
             logger.warning(
                 "Nebula ConnectionPool init failed or returned False; Nebula features will be disabled."
             )
@@ -55,7 +116,7 @@ class NebulaClient:
             self.session = None
             return
 
-        # 获取 session 时保护性捕获异常，若失败将保留为 None
+        # Safely catch exceptions when getting session; keep as None on failure
         try:
             self.session = self.connection_pool.get_session("root", "nebula")
         except Exception as e:
@@ -65,17 +126,17 @@ class NebulaClient:
         if self.session is None:
             logger.warning("Nebula session is None; nebula features may be unavailable.")
         else:
-            # 只有在 session 获取成功时才注册退出钩子
+            # Only register exit hook when session is successfully obtained
             atexit.register(self._atexit_close)
 
     def _atexit_close(self):
-        # 退出阶段就别做网络 I/O 了
+        # Skip network I/O during exit phase
         if hasattr(sys, "is_finalizing") and sys.is_finalizing():
             return
 
-        # 保护性检查：在解释器退出或对象被部分销毁时，
-        # session 或 connection_pool 可能为 None 或已被清理，
-        # 因此需要额外判断并捕获可能的异常，避免抛出 AttributeError。
+        # Guard check: during interpreter exit or partial object destruction,
+        # session or connection_pool may be None or already cleaned up,
+        # so we need additional checks and exception handling to avoid AttributeError.
         try:
             if getattr(self, "session", None):
                 try:
@@ -91,6 +152,7 @@ class NebulaClient:
             logger.warning(f"_atexit_close failed: {e}")
 
     def create_space(self, db_name):
+        """Create graph space (string VID type, for legacy triplet storage)."""
         self.session.execute(
             f"CREATE SPACE IF NOT EXISTS {db_name}(vid_type=FIXED_STRING(256), partition_num=1, replica_factor=1);"
         )
@@ -107,6 +169,7 @@ class NebulaClient:
         time.sleep(10)
 
     def create_graph_space(self, db_name):
+        """Create graph space (INT64 VID type, for CacheGraphRAG L2 persistent graph storage, with source_chunk attribute)."""
         self.session.execute(
             f"CREATE SPACE IF NOT EXISTS {db_name}(vid_type=INT64, partition_num=10, replica_factor=1);"
         )
@@ -125,7 +188,7 @@ class NebulaClient:
             self.session.execute(f"drop space {space}")
 
     def info(self, db_name):
-        # 切换空间
+        # Switch space
         use_resp = self.session.execute(f"USE {db_name};")
         if not use_resp.is_succeeded():
             print_resp(use_resp)
@@ -136,7 +199,7 @@ class NebulaClient:
             print_resp(submit_resp)
             return
 
-        # 等待统计任务完成
+        # Wait for stats job to complete
         for _ in range(10):
             time.sleep(1)
             stats_resp = self.session.execute("SHOW STATS;")
@@ -144,7 +207,7 @@ class NebulaClient:
                 print_resp(stats_resp)
                 return
 
-        print("show stats 仍未成功，请稍后重试。")
+        print("show stats still not successful, please retry later.")
 
     def count_edges(self, db_name):
         result = self.session.execute(
@@ -182,7 +245,7 @@ class NebulaClient:
         if not file_path:
             file_path = db_name + "_triplets.json"
         all_triples = self.get_triplets(db_name=db_name)
-        from utils.base import save_to_json
+        from src.utils.base import save_to_json
 
         save_to_json(file_path=file_path, data=all_triples)
 
@@ -203,14 +266,14 @@ class NebulaClient:
                 head, relation, tail = "", "", ""
 
                 for value in values:
-                    if value.field == 9:  # 对应 Vertex
+                    if value.field == 9:  # Corresponds to Vertex
                         vertex = value.get_vVal()
                         if not head:
                             head = vertex.vid.get_sVal().decode("utf-8")
                         else:
                             tail = vertex.vid.get_sVal().decode("utf-8")
 
-                    elif value.field == 10:  # 对应 Edge
+                    elif value.field == 10:  # Corresponds to Edge
                         edge = value.get_eVal()
                         relation = (
                             edge.props.get(b"relationship").get_sVal().decode("utf-8")
@@ -316,6 +379,7 @@ def escape_str(value: str) -> str:
 
 
 class NebulaDB:
+    """NebulaGraph high-level graph database operation wrapper, providing CRUD for nodes/edges, Schema management, and graph query interface."""
 
     def __init__(
         self,
@@ -374,7 +438,7 @@ class NebulaDB:
             except Exception as e:
                 logger.warning(f"init_session_pool failed: {e}")
 
-        # 仅在 session_pool 成功初始化时注册退出钩子
+        # Only register exit hook when session_pool is initialized successfully
         if getattr(self, "_session_pool", None):
             atexit.register(self._atexit_close)
         else:
@@ -800,7 +864,8 @@ class NebulaDB:
             f"Relationships: {relationships}\n"
         )
 
-    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
+    def query(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Dict[str, list]:
+        """Execute an nGQL query and return results as a {column_name: [value_list]} dictionary."""
         result = self.execute(query, param_map)
         columns = result.keys()
         d: Dict[str, list] = {}
@@ -1004,8 +1069,8 @@ class NebulaDB:
         return clean_rel_map
 
     def _atexit_close(self):
-        """进程退出前的兜底关闭，不做网络 I/O 以避免 NoneType 错误。"""
-        # 解释器正在 finalizing 时，不再做任何 I/O
+        """Fallback close before process exit, no network I/O to avoid NoneType errors."""
+        # Do not perform any I/O when the interpreter is finalizing
         if hasattr(sys, "is_finalizing") and sys.is_finalizing():
             return
 
@@ -1090,7 +1155,7 @@ class NebulaDB:
             all_triplets_str.append(triplet_str)
 
         embed_model = EmbeddingEnv(
-            embed_name="/home/shuyurui/model/bge-large-en-v1.5", embed_batch_size=10
+            embed_name="BAAI/bge-small-en-v1.5", embed_batch_size=10
         )
 
         all_embeddings = []
@@ -1121,7 +1186,7 @@ class NebulaDB:
         self.client.save_triplets(self._space_name, file_path)
 
     def two_hop_parse_triplets(self, query):
-        # 定义正则表达式模式
+        # Define regex patterns
         two_hop_pattern1 = re.compile(
             r"(.+) <-(?<! )(.+?)(?<! )- (.+) -(?<! )(.+?)(?<! )-> (.+)"
         )
@@ -1236,9 +1301,9 @@ if __name__ == "__main__":
     # client.clear('rgb')
 
     # cd nebula-graph-studio-3.7.0
-    # 后台运行studio web服务，连接到 NebulaGraph 数据库
+    # Run the studio web service in the background to connect to the NebulaGraph database
     # docker compose up -d
-    # 2. Studio — SSH 隧道（因为已绑定 localhost）
-    # 在本地终端执行：
+    # 2. Studio - SSH tunnel (since it's bound to localhost)
+    # Run in the local terminal:
     # ssh -L 7001:127.0.0.1:7001 shuyurui@121.48.164.166 -N
-    # 然后浏览器打开 http://localhost:7001，在 Studio 中连接 Nebula 时填 127.0.0.1:9669，用户名 root，密码 nebula。
+    # Then open http://localhost:7001 in a browser. When connecting to Nebula in Studio, use 127.0.0.1:9669, user root, password nebula.

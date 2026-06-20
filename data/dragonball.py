@@ -5,7 +5,7 @@ from collections import Counter
 
 # from llama_index.core import Document
 from data.paths import DRAGONBALL_DATAPATH
-from utils import file_exist, read_jsonl, save_to_json
+from src.utils import file_exist, read_jsonl, save_to_json
 
 
 def get_dragonball_info(language=None, query_type=None):

@@ -3,7 +3,7 @@ import os
 from typing import Dict, List
 
 from data.paths import COND_DATAPATH
-from utils import file_exist
+from src.utils import file_exist
 
 
 def _resolve_cond_path(file: str) -> str:

@@ -1,5 +1,5 @@
-from utils import get_config
-from utils.llm_env import LLMEnv
+from src.utils import get_config
+from src.llm.env import LLMEnv
 
 
 if __name__ == "__main__":

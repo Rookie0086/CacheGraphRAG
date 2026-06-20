@@ -7,7 +7,7 @@ import time
 import numpy as np
 from tqdm import tqdm
 from typing import Dict, List
-from utils.bert_sim import bert
+from src.entity.bert_sim import bert
 
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -15,9 +15,9 @@ if PROJECT_ROOT not in sys.path:
 	sys.path.insert(0, PROJECT_ROOT)
 
 from database.milvus import MilvusDB
-from utils.prompts import prompt_answer_with_chunks_str
-from utils.base import read_json, save_to_json, checkanswer, checkanswer_rougel, get_accuracy, get_accuracy_rougel
-from utils.llm_env import LLMEnv
+from src.utils.prompts import prompt_answer_with_chunks_str
+from src.utils.base import read_json, save_to_json, checkanswer, checkanswer_rougel, get_accuracy, get_accuracy_rougel
+from src.llm.env import LLMEnv
 
 
 def build_chunk_text_map(
@@ -62,8 +62,8 @@ def run_generate(dataset: str,start: int, end: int, backend: str):
 	llm = LLMEnv(
 		backend="openai", 
 		model="gpt-4o-mini", 
-		api_key="sk-of-OUbbhtqucYYpKtappAhGLNhviBsIiNEgiwzxwiwOpiEgxgtNXMzrPRAVauVBvalD",
-		base_url="https://api.ofox.ai/v1",
+		api_key="sk-xxx",
+		base_url="https://api.ofox.io/v1",
 		max_tokens=1024, 
 		timeout=1000
 		)

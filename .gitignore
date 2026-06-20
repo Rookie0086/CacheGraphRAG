@@ -1,3 +1,40 @@
+# =====================
+#   Project specific
+# =====================
+
+# Runtime outputs
+output/
+logs/
+log/
+
+# Pre-processed chunks (build artifact)
+data/chunk/
+
+# QA / retrieval result files (runtime eval artifacts)
+data/qa_results_*.json
+data/retrieval_results_*.json
+
+# L1 graph snapshots (runtime generated)
+subgraph/
+
+# LLM cache
+*.jsonl
+
+# Config template (keep config.yaml itself tracked for easy deployment)
+config/config.yaml.template
+config/config.example.yaml
+
+# macOS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# =====================
+#   Python generic
+# =====================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -4,18 +4,19 @@ import math
 import random
 from typing import List
 
-from transformers import (
-    AutoTokenizer,
-    PreTrainedTokenizer,
-)
-
 from data.paths import RGB_DATAPATH
-from utils import file_exist
+from src.utils import file_exist
 
-tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
-    pretrained_model_name_or_path="/home/shuyurui/model/Llama-3.1-8B",
-    use_fast=False,
-)
+
+_tokenizer = None
+
+
+def _get_tokenizer():
+    global _tokenizer
+    if _tokenizer is None:
+        from transformers import AutoTokenizer
+        _tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-small-en-v1.5")
+    return _tokenizer
 
 
 def compact_string(texts: List[str], chunk_size=2048):
@@ -28,7 +29,7 @@ def compact_string(texts: List[str], chunk_size=2048):
         #     compact_texts.append(cur_string)
         #     cur_string = ''
 
-        input_ids = tokenizer.encode(cur_string, add_special_tokens=False)
+        input_ids = _get_tokenizer().encode(cur_string, add_special_tokens=False)
 
         if len(input_ids) > chunk_size:
             compact_texts.append(cur_string)
@@ -111,6 +112,23 @@ def processdata(instance, noise_rate, passage_num, filename, correct_rate = 0):
     
     return query, ans, docs
 
+def _iter_json_objects(file_path):
+    """Read JSON objects one by one (compatible with both pretty-print multi-line and single-line formats)."""
+    with open(file_path, "r") as f:
+        buf = ""
+        depth = 0
+        for line in f:
+            buf += line
+            for ch in line:
+                if ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+            if depth == 0 and buf.strip():
+                yield json.loads(buf)
+                buf = ""
+
+
 def get_rgb_info(file="en", chunk_size=512):
     data_file = os.path.join(RGB_DATAPATH, f"{file}.json")
     assert file_exist(data_file), f"{data_file} not exist!"
@@ -118,31 +136,29 @@ def get_rgb_info(file="en", chunk_size=512):
     texts = []
     questions = []
     answers = []
-    with open(data_file, "r") as f:
-        for line in f:
-            instance = json.loads(line)
-            if file == "en_fact":
-                pos_text = " ".join(concat_strings_in_list(instance["positive"]))
-                neg_text = " ".join(concat_strings_in_list(instance["negative"]))
-                texts.append(pos_text + "\n" + neg_text)
-            elif file == "en_int":
-                pos_texts = concat_strings_in_list(instance["positive"])
-                neg_texts = concat_strings_in_list(instance["negative"])
-                # texts.append(compact_string(pos_texts, chunk_size=chunk_size))
-                texts.append(
-                    compact_string(pos_texts + neg_texts, chunk_size=chunk_size)
-                )
-                # print(len(texts[-1]))
-            elif file == "en_refine":
-                pos_text = " ".join(concat_strings_in_list(instance["positive"]))
-                neg_text = " ".join(concat_strings_in_list(instance["negative"]))
-                texts.append(pos_text + "\n" + neg_text)
-            else:
-                pos_text = " ".join(concat_strings_in_list(instance["positive"]))
-                texts.append(pos_text)
-                # texts += concat_strings_in_list(instance["negative"])
-            questions.append(instance["query"])
-            answers.append(instance["answer"])
+    for instance in _iter_json_objects(data_file):
+        if file == "en_fact":
+            pos_text = " ".join(concat_strings_in_list(instance["positive"]))
+            neg_text = " ".join(concat_strings_in_list(instance["negative"]))
+            texts.append(pos_text + "\n" + neg_text)
+        elif file == "en_int":
+            pos_texts = concat_strings_in_list(instance["positive"])
+            neg_texts = concat_strings_in_list(instance["negative"])
+            # texts.append(compact_string(pos_texts, chunk_size=chunk_size))
+            texts.append(
+                compact_string(pos_texts + neg_texts, chunk_size=chunk_size)
+            )
+            # print(len(texts[-1]))
+        elif file == "en_refine":
+            pos_texts = concat_strings_in_list(instance["positive"])
+            neg_texts = concat_strings_in_list(instance["negative"])
+            texts.extend(pos_texts + neg_texts)
+        else:
+            pos_text = " ".join(concat_strings_in_list(instance["positive"]))
+            texts.append(pos_text)
+            # texts += concat_strings_in_list(instance["negative"])
+        questions.append(instance["query"])
+        answers.append(instance["answer"])
 
     # all_len = [len(x) for x in texts]
     # print(all_len[:5])

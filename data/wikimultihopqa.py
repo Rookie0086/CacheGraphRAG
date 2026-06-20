@@ -1,10 +1,10 @@
 import json
 import os
 from typing import Dict, List, Optional
-from utils.base import save_to_json
+from src.utils.base import save_to_json
 
 from data.paths import TWOWIKIMULTIHOPQA_DATAPATH
-from utils.base import file_exist
+from src.utils.base import file_exist
 
 
 def get_2wikimultihopqa_info(q_type: Optional[str] = None) -> Dict[str, List]:

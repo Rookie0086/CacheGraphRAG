@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Dict
 from dotenv import load_dotenv
 from data.paths import ECTQA_DATAPATH
-from utils import file_exist
+from src.utils import file_exist
 
 def load_documents_from_corpus(corpus_path: Path) -> List[Dict]:
     """

@@ -1,8 +1,72 @@
+data:
+  dataset: rgb_en_refine
+  end: 300
+  start: 0
+
 model:
-  OPENAI_API_KEY: "sk-of-OUbbhtqucYYpKtappAhGLNhviBsIiNEgiwzxwiwOpiEgxgtNXMzrPRAVauVBvalD"
-  OPENAI_BASE_URL: "https://api.ofox.ai/v1"
-  DEEPSEEK_API_KEY: ""
-  DEEPSEEK_BASE_URL: "https://api.deepseek.com/v1/"
-  LLAMA3_8B_URL: "http://localhost:11434"
-  llama3_8b_inst: "/home/shuyurui/model/Llama-3.1-8B"
-  mistral_7b_inst: "/home/hdd/model/Mistral-7B-Instruct-v0.3"
+  backend: ollama
+  model_name: llama3.1:8b
+  base_url: http://localhost:11434
+
+embedding:
+  backend: ollama
+  model_name: nomic-embed-text
+  base_url: http://localhost:11434
+
+retrieval:
+  mode: hybrid           # RGB baseline = 混合检索(DPR+图)
+  entity_extraction: llm     # baseline 使用 LLM 提取实体
+  skip_index: false
+  index_only: false
+  nebula_space: rgb_en_refine
+  chunk_collection: rgb_en_refine
+  entity_index_name: entity_index_rgb_en_refine
+  top_chunks: 15
+  answer_topk: 6
+  batch_size: 20
+  qa_cache: true
+  use_llm_cache: true
+  clear_l2: true
+  agentic: false
+  stream_mode: false
+  noise_flush_docs: 0
+  promotion_expansion: 10
+  promotion_retries: 2
+  qa_concurrency: 5
+  resume_gexf: ''
+
+indexing:
+  chunk_size: 800
+  chunk_overlap: 100
+  l1_max_chunks: 0
+  l1_max_nodes: 0
+  l1_ttl_seconds: 3600
+  build_concurrency: 15
+  chunk_concurrency: 20
+  llm_concurrency: 20
+  offline_alignment: true
+  promotion_threshold: 3
+  prune_interval: 5
+
+fusion:
+  method: rrf
+  rrf_k: 60
+  dpr_weight: 0.5
+  graph_reserve: 2
+  overlap_reserve: 2
+  overlap_boost: 3.0
+  convergence_threshold: 2
+  convergence_boost: 1.3
+
+rerank:
+  backend: local
+  model_name: BAAI/bge-reranker-v2-m3
+
+fact_retrieval:
+  enabled: false
+
+quality_promotion:
+  enabled: false
+
+incremental_experiment:
+  enabled: false
