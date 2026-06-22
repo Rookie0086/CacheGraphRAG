@@ -4,8 +4,8 @@ import random
 from typing import Dict, List
 
 from data.paths import HOTPOTQA_DATAPATH
-from utils import file_exist
-from utils.base import save_to_json
+from src.utils import file_exist
+from src.utils.base import save_to_json
 
 
 def _format_context(entry) -> str:
@@ -21,6 +21,49 @@ def _format_context(entry) -> str:
     return f"{title}:{body}".strip()
 
 
+def _merge_sentences(entry) -> str:
+    """Extract the sentence list from an entry and merge into plain text (without title)."""
+    if not isinstance(entry, list) or len(entry) != 2:
+        return ""
+    _, sentences = entry
+    if isinstance(sentences, list):
+        return " ".join(str(s) for s in sentences if str(s))
+    return str(sentences)
+
+
+def get_hotpotqa_corpus(file: str = "hotpot_dev_distractor_v1", num: int = 300) -> List[str]:
+    """Extract all unique documents, merge into one large text, and return a single-element list for LangChain to split.
+
+    Dedup logic: only the first occurrence of each title is kept.
+    """
+    data_file = os.path.join(HOTPOTQA_DATAPATH, f"{file}.json")
+    assert file_exist(data_file), f"{data_file} not exist!"
+    with open(data_file, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    data_list = data if isinstance(data, list) else [data]
+    sample_size = min(num, len(data_list))
+    sampled_items = data_list[:sample_size]
+
+    seen_titles = set()
+    all_texts = []
+    for item in sampled_items:
+        for entry in item.get("context", []):
+            if not isinstance(entry, list) or len(entry) != 2:
+                continue
+            title = entry[0]
+            if title in seen_titles:
+                continue
+            seen_titles.add(title)
+            text = _merge_sentences(entry)
+            if text:
+                all_texts.append(text)
+
+    # Merge into one large text for LangChain to split
+    merged = "\n\n".join(all_texts)
+    print(f"Corpus: {len(all_texts)} unique documents, {len(merged)} characters after merging")
+    return [merged]
+
+
 def get_hotpotqa_info(file: str = "hotpot_dev_distractor_v1",num: int = 300) -> Dict[str, List]:
     data_file = os.path.join(HOTPOTQA_DATAPATH, f"{file}.json")
     assert file_exist(data_file), f"{data_file} not exist!"
@@ -32,7 +75,7 @@ def get_hotpotqa_info(file: str = "hotpot_dev_distractor_v1",num: int = 300) -> 
         data = json.load(handle)
     data_list = data if isinstance(data, list) else [data]
     sample_size = min(num, len(data_list))
-    sampled_items = random.sample(data_list, sample_size) if sample_size > 0 else []
+    sampled_items = data_list[:sample_size]
     for item in sampled_items:
         questions.append(item.get("question", ""))
         answers.append(item.get("answer", ""))

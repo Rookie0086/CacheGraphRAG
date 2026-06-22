@@ -3,7 +3,7 @@ import os
 from typing import Dict, List
 
 from data.paths import SQUAD_DATAPATH
-from utils import file_exist
+from src.utils import file_exist
 
 def _unique_preserve(items: List[str]) -> List[str]:
     seen = set()

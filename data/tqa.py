@@ -3,7 +3,7 @@ import os
 import random
 
 from data.paths import TQA_DATAPATH
-from utils import file_exist, read_json
+from src.utils import file_exist, read_json
 
 
 def process_instance(tqa_instances):

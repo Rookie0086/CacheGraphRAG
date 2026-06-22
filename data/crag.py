@@ -3,7 +3,7 @@ import json
 import os
 from typing import Iterable, List, Optional
 
-from utils.base import create_dir, file_exist, save_to_json
+from src.utils.base import create_dir, file_exist, save_to_json
 
 
 def _default_data_path() -> str:

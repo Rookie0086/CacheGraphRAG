@@ -1,9 +1,9 @@
 import time
-from datetime import datetime
-import torch
-from typing import List, Optional  # Optional, Dict,
+import json
+from datetime import datetime, timezone
+from typing import List, Optional
 
-from pymilvus import (  # utility,; FieldSchema,; CollectionSchema,; MilvusClient,; Connections,
+from pymilvus import (
     Collection,
     DataType,
     Milvus,
@@ -11,227 +11,196 @@ from pymilvus import (  # utility,; FieldSchema,; CollectionSchema,; MilvusClien
     db,
 )
 
-from utils.base import print_text
-from utils.llm_env import EmbeddingEnv
-
-fmt = "\n=== {:30} ===\n"
+from src.utils.base import print_text
+from src.llm.env import EmbeddingEnv
 
 
 class myMilvus(Milvus):
+    """Lightweight wrapper around the Milvus native client, providing collection management and debugging helpers."""
 
     def __init__(self, host="127.0.0.1", port="19530", **kwargs):
-        super().__init__(host=host, port=port, **kwargs)
+        import uuid as _uuid
+        self._my_alias = f"mgr_{_uuid.uuid4().hex[:8]}"
+        kwargs.pop("using", None)
+        super().__init__(host=host, port=port, using=self._my_alias, **kwargs)
+        try:
+            connections.get_connection(self._my_alias)
+        except Exception:
+            connections.connect(self._my_alias, host=host, port=port)
 
     def show_all_collections(self):
+        """Print all collection names."""
         ret = self.list_collections()
         print(f"=== all collections name: {ret}")
 
     def show_collections_stats(self, db_name):
+        """Print statistics (row count, etc.) for a specified collection."""
         ret = self.get_collection_stats(db_name)
         print(f"=== stat of {db_name}: {ret}")
 
     def show_collections_schema(self, db_name):
+        """Print the schema of a specified collection."""
         ret = self.describe_collection(db_name)
         print(f"=== schema of {db_name}: {ret}")
 
     def drop(self, db_name):
+        """Drop a specified collection."""
         ret = self.drop_collection(db_name)
         print(f"=== clear collection {db_name}: {ret}")
 
     def get_vector_count(self, db_name):
+        """Get the total number of vectors in the collection."""
         ret = self.get_collection_stats(db_name)
         return ret["row_count"]
 
 
+# ── Module-level global lock, only protects collection creation ──
+import threading as _threading
+_CREATE_LOCK = _threading.Lock()
+
+
 class MilvusDB:
+    """Milvus vector database wrapper. Thread-local connection for high-concurrency lock-free access."""
 
     def __init__(
         self,
         db_name,
-        model_name="/home/shuyurui/model/bge-large-en-v1.5",
+        model_name="BAAI/bge-small-en-v1.5",
         overwrite=False,
         server_ip="127.0.0.1",
         server_port="19530",
         metric="COSINE",
         verbose=False,
+        embed_model=None,
     ):
         self.db_name = db_name
         self.overwrite = overwrite
         self.server_ip = server_ip
         self.server_port = server_port
         self.client = myMilvus(server_ip, server_port)
-
-        self.db = None
         self.verbose = verbose
         self.metric = metric
+        self._local = _threading.local()  # Thread-local storage
+        self._prefix = f"{db_name}_"  # Thread alias prefix
 
-        self.embed_model = EmbeddingEnv(model_name=model_name, batch_size=20)
+        if embed_model is not None:
+            self.embed_model = embed_model
+        else:
+            self.embed_model = EmbeddingEnv(model_name=model_name, batch_size=20)
 
-        connections.connect("default", host="localhost", port=server_port)
+    def _alias(self) -> str:
+        """Unique connection alias for the current thread."""
+        tid = _threading.get_ident()
+        return f"{self._prefix}{tid}"
+
+    def _get_db(self):
+        """Get the Collection object for the current thread (lazy init + auto reconnect)."""
+        alias = self._alias()
+        db = getattr(self._local, 'db', None)
+        if db is not None:
+            try:
+                _ = db.num_entities  # Check connection validity
+                return db
+            except Exception:
+                pass  # Connection invalid, reconnect
+
+        # Establish connection + load collection
+        with _CREATE_LOCK:
+            try:
+                connections.get_connection(alias)
+            except Exception:
+                connections.connect(alias, host="localhost", port=self.server_port)
+        db = Collection(self.db_name, using=alias)
+        db.load()
+        self._local.db = db
+        return db
+
+    def search(self, vector, search_params, limit, output_fields=None):
+        """Vector search (thread-safe, lock-free)."""
+        db = self._get_db()
+        kwargs = dict(data=[vector], anns_field="vec", param=search_params,
+                      limit=limit, consistency_level="Strong")
+        if output_fields:
+            kwargs["output_fields"] = output_fields
+        return db.search(**kwargs)
+
+    def query(self, expr, output_fields, limit=1):
+        """Scalar query (thread-safe, lock-free)."""
+        db = self._get_db()
+        return db.query(expr=expr, output_fields=output_fields, limit=limit)
 
     def insert(self, entities):
-        if not self.db:
-            self.load()
+        """Insert entity data."""
+        db = self._get_db()
         time_s = time.time()
-        # self.client.insert(self.db_name, entities)
-        self.db.insert(entities)
-        time_e = time.time()
+        db.insert(entities)
         if self.verbose:
-            print(f"insert cost {time_e - time_s}")
-
-        self.db.load()
-
-    def flush(self, retries=3, base_delay=1.0):
-        if not self.db:
-            return
-        last_err = None
-        for attempt in range(retries + 1):
-            try:
-                self.db.flush()
-                return
-            except Exception as exc:
-                last_err = exc
-                # Reconnect and retry on transient channel errors.
-                try:
-                    connections.disconnect("default")
-                except Exception:
-                    pass
-                connections.connect("default", host="localhost", port=self.server_port)
-                time.sleep(base_delay * (2**attempt))
-        raise last_err
+            print(f"insert cost {time.time() - time_s}")
 
     def load(self):
-        if not self.db:
-            self.db = Collection(self.db_name)
-            self.db.load()
+        """Load collection into memory."""
+        self._get_db()  # Trigger connection + load
 
-    def search(self, embedding, limit=3):
-        # self.db.load()
-        # time_s = time.time()
-        # self.db.flush()
-        # time_e = time.time()
-        # print(f'time cost {time_e - time_s:.3f}')
-        search_params = {
-            "metric_type": self.metric,
-            "params": {"nprobe": 10},
-        }
+    def search_simple(self, embedding, limit=3):
+        """Simple vector search, returns (primary key list, distance list)."""
+        db = self._get_db()
+        search_params = {"metric_type": self.metric, "params": {"nprobe": 10}}
         start_time = time.time()
-        result = self.db.search(embedding, "vec", search_params, limit=limit)
-        end_time = time.time()
-
-        # logging.info(f'embedding {embedding}, search cost {end_time-start_time:.3f}')
-
-        # print(type(result), type(result[0]), type(result[0][0]))
-
+        result = db.search(embedding, "vec", search_params, limit=limit)
         distance = [hit.distance for hits in result for hit in hits]
         pk = [hit.pk for hits in result for hit in hits]
-
         if self.verbose:
-            print(f"search cost {end_time-start_time:.3f}")
-
-        # for hits in result:
-        #     print(hits)
-        #     for hit in hits:
-        #         print(f"hit: {hit}, random field: {hit.entity.get('distance')}, {hit.distance}")
-
+            print(f"search cost {time.time() - start_time:.3f}")
         return pk, distance
 
-    def create(self, consistency_level="Strong"):
+    def flush(self):
+        """Flush the buffer."""
+        self._get_db().flush()
 
-        # connections.connect("default", host="localhost", port="19530")
+    # ── Collection Creation ──────────────────────────────────
 
+    def _create_collection(self, fields: dict, consistency_level="Strong", ttl_seconds=None):
+        """Generic collection creation: create collection -> create index -> load."""
         if self.overwrite and self.db_name in self.client.list_collections():
             self.client.drop_collection(self.db_name)
+        kwargs = {"consistency_level": consistency_level}
+        if ttl_seconds:
+            kwargs["properties"] = {"collection.ttl.seconds": ttl_seconds}
+        self.client.create_collection(self.db_name, fields, **kwargs)
+        index = {"index_type": "HNSW", "metric_type": self.metric, "params": {"M": 16, "efConstruction": 200}}
+        self.client.create_index(self.db_name, "vec", index)
+        # Pre-load the current thread's db
+        self._get_db()
 
-        # fields = [
-        #     FieldSchema(name="pk", dtype=DataType.INT64, is_primary=True, auto_id=False),
-        #     # FieldSchema(name="random", dtype=DataType.DOUBLE),
-        #     FieldSchema(name="vec", dtype=DataType.FLOAT_VECTOR, dim=self.dim)
-        # ]
-
+    def create(self, consistency_level="Strong"):
+        """Create a basic collection containing only pk + vec."""
         fields = {
             "fields": [
                 {"name": "pk", "type": DataType.INT64, "is_primary": True},
-                {
-                    "name": "vec",
-                    "type": DataType.FLOAT_VECTOR,
-                    "params": {"dim": self.embed_model.dim},
-                },
+                {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
             ],
             "auto_id": False,
         }
-
-        self.client.create_collection(
-            self.db_name,
-            fields,
-            consistency_level=consistency_level,
-            # Strong, Bounded, Eventually, Session
-        )
-
-        index = {
-            "index_type": "IVF_FLAT",
-            "metric_type": self.metric,
-            "params": {"nlist": 128},
-        }
-        # self.db.create_index("embeddings", index)
-
-        # schema = CollectionSchema(fields, "customize schema")
-
-        # self.db = Collection(self.db_name, schema)
-
-        self.client.create_index(self.db_name, "vec", index)
-
-        # print(Connections().list_connections)
-
-        # print('has', self.client.has_collection(self.db_name))
-
-        # self.db = Collection(self.db_name, consistency_level=consistency_level)
-        self.db = Collection(self.db_name)
-        self.db.load()
+        self._create_collection(fields, consistency_level)
 
     def create_chunk_collection(self, consistency_level="Strong"):
-
-        if self.overwrite and self.db_name in self.client.list_collections():
-            self.client.drop_collection(self.db_name)
-
+        """Create a document chunk collection with chunk_id / chunk_text / entity_uids / graph_meta fields."""
         fields = {
             "fields": [
                 {"name": "pk", "type": DataType.INT64, "is_primary": True},
-                {
-                    "name": "vec",
-                    "type": DataType.FLOAT_VECTOR,
-                    "params": {"dim": self.embed_model.dim},
-                },
+                {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
                 {"name": "chunk_id", "type": DataType.VARCHAR, "params": {"max_length": 255}},
                 {"name": "chunk_text", "type": DataType.VARCHAR, "params": {"max_length": 8192}},
                 {"name": "entity_uids", "type": DataType.VARCHAR, "params": {"max_length": 4096}},
+                {"name": "graph_meta", "type": DataType.JSON},
                 {"name": "ts", "type": DataType.VARCHAR, "params": {"max_length": 64}},
             ],
             "auto_id": False,
         }
-
-        self.client.create_collection(
-            self.db_name,
-            fields,
-            consistency_level=consistency_level,
-            properties={"collection.ttl.seconds": 1209600},  # 设置 TTL 为 1 天
-        )
-
-        index = {
-            "index_type": "IVF_FLAT",
-            "metric_type": self.metric,
-            "params": {"nlist": 128},
-        }
-        self.client.create_index(self.db_name, "vec", index)
-
-        self.db = Collection(self.db_name)
-        self.db.load()
+        self._create_collection(fields, consistency_level, ttl_seconds=1209600)
 
     def create_entity_collection(self, consistency_level="Strong"):
-
-        if self.overwrite and self.db_name in self.client.list_collections():
-            self.client.drop_collection(self.db_name)
-
+        """Create an entity index collection with uid / name / type / desc fields."""
         fields = {
             "fields": [
                 {"name": "uid", "type": DataType.INT64, "is_primary": True},
@@ -239,174 +208,176 @@ class MilvusDB:
                 {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
                 {"name": "type", "type": DataType.VARCHAR, "params": {"max_length": 255}},
                 {"name": "desc", "type": DataType.VARCHAR, "params": {"max_length": 2048}},
-                # {"name": "tsz", "type": DataType.TIMESTAMPTZ, nullable=True},
             ],
             "auto_id": False,
         }
+        self._create_collection(fields, consistency_level, ttl_seconds=1209600)
 
-        self.client.create_collection(
-            self.db_name,
-            fields,
-            consistency_level=consistency_level,
-            properties={"collection.ttl.seconds": 1209600},  # 设置 TTL 为 1 天
-        )
-
-        index = {
-            "index_type": "IVF_FLAT",
-            "metric_type": self.metric,
-            "params": {"nlist": 128},
-        }
-        self.client.create_index(self.db_name, "vec", index)
-
-        self.db = Collection(self.db_name)
-        self.db.load()
+    # ── Schema Detection ──────────────────────────────────
 
     def _has_field(self, field_name: str) -> bool:
-        if not self.db:
-            self.load()
+        """Check if the current collection contains the specified field."""
         try:
-            return any(getattr(field, "name", "") == field_name for field in self.db.schema.fields)
+            db = self._get_db()
+            return any(getattr(field, "name", "") == field_name for field in db.schema.fields)
         except Exception:
             return False
 
+    def _get_field_dtype(self, field_name: str):
+        """Get the data type of the specified field."""
+        try:
+            db = self._get_db()
+            for field in db.schema.fields:
+                if getattr(field, "name", "") == field_name:
+                    return getattr(field, "dtype", None)
+        except Exception:
+            return None
+        return None
+
+    def _serialize_graph_meta(self, graph_meta: dict):
+        """Serialize graph_meta to JSON string (if the field type is not native JSON)."""
+        if graph_meta is None:
+            return None
+        dtype = self._get_field_dtype("graph_meta")
+        if dtype == DataType.JSON:
+            return graph_meta
+        return json.dumps(graph_meta, ensure_ascii=True)
+
+    # ── Chunk Query ────────────────────────────────────────
+
     def get_chunk_entities(self, chunk_id: str) -> List[str]:
-        if not self.db:
-            self.load()
+        """Query list of entity UIDs by chunk_id."""
         if not (self._has_field("chunk_id") and self._has_field("entity_uids")):
             return []
         try:
-            rows = self.db.query(
-                expr=f'chunk_id == "{chunk_id}"',
-                output_fields=["entity_uids"],
-                limit=1,
-            )
+            rows = self.query(expr=f'chunk_id == "{chunk_id}"',
+                              output_fields=["entity_uids"], limit=1)
         except Exception:
             return []
-        if not rows:
-            return []
+        if not rows: return []
         value = rows[0].get("entity_uids", "")
-        if not isinstance(value, str) or not value:
-            return []
+        if not isinstance(value, str) or not value: return []
         return [v for v in value.split(",") if v]
 
     def get_chunk_text(self, chunk_id: str) -> dict:
-        if not self.db:
-            self.load()
+        """Get chunk text by chunk_id."""
         if not (self._has_field("chunk_id") and self._has_field("chunk_text")):
             return {"text": "", "ts": ""}
         output_fields = ["chunk_text"]
-        if self._has_field("ts"):
-            output_fields.append("ts")
+        if self._has_field("ts"): output_fields.append("ts")
         try:
-            rows = self.db.query(
-                expr=f'chunk_id == "{chunk_id}"',
-                output_fields=output_fields,
-                limit=1,
-            )
+            rows = self.query(expr=f'chunk_id == "{chunk_id}"',
+                              output_fields=output_fields, limit=1)
         except Exception:
             return {"text": "", "ts": ""}
-        if not rows:
-            return {"text": "", "ts": ""}
+        if not rows: return {"text": "", "ts": ""}
         row = rows[0]
-        text_value = row.get("chunk_text", "")
-        ts_value = row.get("ts", "")
-        if not isinstance(text_value, str):
-            text_value = ""
-        if not isinstance(ts_value, str):
-            ts_value = ""
-        return {"text": text_value, "ts": ts_value}
+        return {"text": row.get("chunk_text", "") or "",
+                "ts": row.get("ts", "") or ""}
 
-    async def insert_chunk_async(
-        self,
-        chunk_id: str,
-        vector: List[float],
-        entity_uids: Optional[List[str]] = None,
-        chunk_text: Optional[str] = None,
-        timestamp: Optional[str] = None,
-    ):
-        if not self.db:
-            self.load()
+    def get_chunk_graph_meta(self, chunk_id: str) -> dict:
+        """Get graph metadata by chunk_id."""
+        if not self._has_field("graph_meta"):
+            return {}
+        try:
+            rows = self.query(expr=f'chunk_id == "{chunk_id}"',
+                              output_fields=["graph_meta"], limit=1)
+        except Exception:
+            return {}
+        if not rows: return {}
+        value = rows[0].get("graph_meta")
+        if isinstance(value, dict): return value
+        if isinstance(value, str) and value:
+            try: return json.loads(value)
+            except json.JSONDecodeError: return {}
+        return {}
+
+    def _prepare_chunk_record(self, chunk_id, vector, entity_uids, chunk_text, graph_meta, timestamp):
         pk = abs(hash(chunk_id)) % (2**63 - 1)
         record = {"pk": pk, "vec": vector}
-        if self._has_field("chunk_id"):
-            record["chunk_id"] = chunk_id
+        if self._has_field("chunk_id"): record["chunk_id"] = chunk_id
         if self._has_field("chunk_text") and chunk_text is not None:
             record["chunk_text"] = chunk_text
         if self._has_field("entity_uids"):
-            if entity_uids is None:
-                entity_uids = []
-            entity_uids_str = ",".join(str(uid) for uid in entity_uids if str(uid))
-            record["entity_uids"] = entity_uids_str
+            if entity_uids is None: entity_uids = []
+            record["entity_uids"] = ",".join(str(uid) for uid in entity_uids if str(uid))
+        if self._has_field("graph_meta") and graph_meta is not None:
+            record["graph_meta"] = self._serialize_graph_meta(graph_meta)
         if self._has_field("ts"):
             if not timestamp:
-                timestamp = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+                timestamp = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
             record["ts"] = timestamp
-        print(f"=== inserting chunk {chunk_id} with pk {pk} into Milvus ===")
-        self.db.insert([record])
-        print(f"=== chunk {chunk_id} inserted into Milvus with pk {pk} ===")
+        return record
 
-def test_db(db_name):
-    vector_db = MilvusDB(db_name, overwrite=True, metric="COSINE")
-    db_client = myMilvus()
-    vector_db.create()
-    print("create done!")
+    def insert_chunk(self, chunk_id, vector, entity_uids=None, chunk_text=None,
+                     graph_meta=None, timestamp=None):
+        db = self._get_db()
+        record = self._prepare_chunk_record(chunk_id, vector, entity_uids, chunk_text, graph_meta, timestamp)
+        db.insert([record])
 
-    print(f"schema {vector_db.db.schema}")
+    # ── Fact Collection ──────────────────────────────────
 
-    db_client.show_collections_stats(db_name=db_name)
-    pk, dis = vector_db.search([[1, 1, 1, 1]], limit=10)
-    print(f"pk {pk}, dis {dis}")
-    v1 = torch.rand(1024).tolist()
-    vector_db.insert([[1], [v1]])
-    vector_db.insert([[2], [torch.rand(1024).tolist()]])
-    vector_db.insert([[3], [torch.rand(1024).tolist()]])
-    vector_db.flush()
-    pk, dis = vector_db.search([v1], limit=10)
-    print(f"pk {pk}, dis {dis}")
+    def create_fact_collection(self, consistency_level="Strong"):
+        """Create a fact index collection."""
+        fields = {
+            "fields": [
+                {"name": "pk", "type": DataType.INT64, "is_primary": True},
+                {"name": "vec", "type": DataType.FLOAT_VECTOR, "params": {"dim": self.embed_model.dim}},
+                {"name": "fact_text", "type": DataType.VARCHAR, "params": {"max_length": 1024}},
+                {"name": "subj_name", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "obj_name", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "relation", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "chunk_id", "type": DataType.VARCHAR, "params": {"max_length": 255}},
+                {"name": "subj_uid", "type": DataType.INT64},
+                {"name": "obj_uid", "type": DataType.INT64},
+            ],
+            "auto_id": False,
+        }
+        self._create_collection(fields, consistency_level, ttl_seconds=1209600)
 
+    def insert_facts_batch(self, fact_list: list, vectors: list):
+        """Batch insert fact records."""
+        db = self._get_db()
+        records = []
+        for fact_data, vector in zip(fact_list, vectors):
+            pk = abs(hash(fact_data["fact_text"])) % (2**63 - 1)
+            records.append({
+                "pk": pk,
+                "vec": vector.tolist() if hasattr(vector, "tolist") else vector,
+                "fact_text": fact_data.get("fact_text", ""),
+                "subj_name": fact_data.get("subj_name", ""),
+                "obj_name": fact_data.get("obj_name", ""),
+                "relation": fact_data.get("relation", ""),
+                "chunk_id": fact_data.get("chunk_id", ""),
+                "subj_uid": fact_data.get("subj_uid", 0),
+                "obj_uid": fact_data.get("obj_uid", 0),
+            })
+        db.insert(records)
 
-    db_client.show_collections_stats(db_name=db_name)
-
-def test_entity_db(db_name):
-    vector_db = MilvusDB(db_name, overwrite=True, metric="COSINE")
-    db_client = myMilvus()
-    vector_db.create_entity_collection()
-    print("create done!")
-
-    print(f"schema {vector_db.db.schema}")
-
-    db_client.show_collections_stats(db_name=db_name)
-
-def test_chunk_db(db_name):
-    vector_db = MilvusDB(db_name, overwrite=True, metric="COSINE")
-    db_client = myMilvus()
-    vector_db.create_chunk_collection()
-    print("create done!")
-
-    print(f"schema {vector_db.db.schema}")
-
-    db_client.show_collections_stats(db_name=db_name)
-
-if __name__ == "__main__":
-
-    # test_db('test')
-
-    db_name = "entity_index"
-    test_entity_db(db_name)
-    # test_entity_db(db_name)
-    # connections.connect("default", host="127.0.0.1", port="19530")
-    # print(db.list_database())
-    # create vector database
-    # create_datebase(db_name='crag_small')
-
-    vector_db = MilvusDB(db_name=db_name, overwrite=False)
-    client = myMilvus()
-    vector_db.flush()
-    client.show_collections_stats(db_name=db_name)  # dict {'row_count': 150600}
-    client.show_all_collections()
-    des_collection = client.describe_collection(collection_name=db_name)
-    print(f"=== collection schema: {des_collection}")
-
-# python -m database.milvus
-# docker run -p 8000:3000 -e MILVUS_URL=121.48.164.166:19530 zilliz/attu:v2.3.5
-# attu addr : http://121.48.164.166:8000
+    def search_facts(self, vector: list, topk: int = 100) -> list:
+        """Vector search for facts, returns a list of complete metadata."""
+        search_params = {"metric_type": self.metric, "params": {"nprobe": 10}}
+        output_fields = ["fact_text", "subj_name", "obj_name",
+                         "relation", "chunk_id", "subj_uid", "obj_uid"]
+        try:
+            result = self.search(vector, search_params, topk, output_fields=output_fields)
+        except Exception:
+            return []
+        facts = []
+        if result and len(result) > 0:
+            for hit in result[0]:
+                ent = hit.entity
+                def _g(key, default=""):
+                    try: return ent.get(key) or default
+                    except Exception: return getattr(ent, key, default)
+                facts.append({
+                    "fact_text": _g("fact_text"),
+                    "subj_name": _g("subj_name"),
+                    "obj_name": _g("obj_name"),
+                    "relation": _g("relation"),
+                    "chunk_id": _g("chunk_id"),
+                    "subj_uid": _g("subj_uid", 0),
+                    "obj_uid": _g("obj_uid", 0),
+                    "score": float(hit.distance),
+                })
+        return facts

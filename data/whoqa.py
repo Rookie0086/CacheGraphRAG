@@ -3,7 +3,7 @@ import os
 from typing import Dict, List
 
 from data.paths import WHOQA_DATAPATH
-from utils.base import file_exist,save_to_json
+from src.utils.base import file_exist, save_to_json
 
 
 def _join_candidate_texts(candidate_texts) -> str:
@@ -15,15 +15,15 @@ def _join_candidate_texts(candidate_texts) -> str:
 
 def get_whoqa_ex_info(limit: int = 10, update: bool = False) -> Dict[str, List]:
 	"""
-	获取 WhoQA 数据的结构化信息，适用于增量更新实验。
-	每个样本包含：
-	- target_entity: 目标实体名称（从 page_id 提取）
-	- specific_question: 针对目标实体生成的特指问题
-	- phase_1_data: 用于第一阶段建图的干扰项文本列表
-	- phase_2_data: 用于第二阶段增量更新的目标项文本列表
-	- ground_truth: 目标实体的正确答案列表
+	Get structured information from WhoQA data, suitable for incremental update experiments.
+	Each sample contains:
+	- target_entity: target entity name (extracted from page_id)
+	- specific_question: specific question generated for the target entity
+	- phase_1_data: distractor text list used for first-stage graph construction
+	- phase_2_data: target text list used for second-stage incremental update
+	- ground_truth: correct answer list for the target entity
 	"""
-	data_file = "data/whoqa_experiment_dataset_600.json"
+	data_file = os.path.join(WHOQA_DATAPATH, "whoqa_experiment_dataset_600.json")
 	assert file_exist(data_file), f"{data_file} not exist!"
 
 	texts = []

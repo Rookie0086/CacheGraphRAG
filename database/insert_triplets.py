@@ -1,11 +1,11 @@
-import argparse
+"""Batch parallel triplet insertion tool for fast import of (subject, relation, object) triplets into NebulaGraph."""
 
-# import json
+import argparse
 import multiprocessing
 import time
 
 from database.nebulagraph import NebulaDB
-from utils.base import read_json
+from src.utils.base import read_json
 
 
 def insert_triple(pid, triplets, graph_db: NebulaDB, verbose=False, log=False):

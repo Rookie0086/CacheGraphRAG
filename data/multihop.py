@@ -3,7 +3,7 @@ import os
 from typing import Dict, List
 
 from data.paths import MULTIHOP_DATAPATH
-from utils.base import file_exist
+from src.utils.base import file_exist
 
 
 def get_multihop_info(q_type=None) -> Dict:

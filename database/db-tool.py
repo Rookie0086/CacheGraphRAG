@@ -1,15 +1,16 @@
+"""Database management CLI tool for creating/clearing/deleting Milvus vector stores and NebulaGraph graph spaces."""
+
 import argparse
 import os
 
-# from database.nebulagraph import NebulaDB
 from database.milvus import MilvusDB, myMilvus
 from database.nebulagraph import NebulaClient
-from utils.base import file_exist
+from src.utils.base import file_exist
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="database info")
+    parser = argparse.ArgumentParser(description="Database management tool: view/create/clear/delete Milvus and NebulaGraph")
     parser.add_argument("--db", required=True, type=str, help="db name, e.g. test.")
     parser.add_argument(
         "--dim",

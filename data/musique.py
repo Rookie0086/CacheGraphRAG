@@ -3,7 +3,7 @@ import os
 from typing import Dict, List, Optional, Iterable
 
 from data.paths import MUSIQUE_DATAPATH
-from utils.base import file_exist, save_to_json
+from src.utils.base import file_exist, save_to_json
 
 
 def _iter_records(data_file: str) -> Iterable[dict]:
