@@ -5,28 +5,51 @@ from typing import List, Optional
 
 from pymilvus import (
     Collection,
+    CollectionSchema,
     DataType,
-    Milvus,
+    FieldSchema,
     connections,
-    db,
+    utility,
 )
 
 from src.utils.base import print_text
 from src.llm.env import EmbeddingEnv
 
 
-class myMilvus(Milvus):
+class myMilvus:
     """Lightweight wrapper around the Milvus native client, providing collection management and debugging helpers."""
 
     def __init__(self, host="127.0.0.1", port="19530", **kwargs):
         import uuid as _uuid
         self._my_alias = f"mgr_{_uuid.uuid4().hex[:8]}"
         kwargs.pop("using", None)
-        super().__init__(host=host, port=port, using=self._my_alias, **kwargs)
-        try:
-            connections.get_connection(self._my_alias)
-        except Exception:
-            connections.connect(self._my_alias, host=host, port=port)
+        connections.connect(self._my_alias, host=host, port=port, **kwargs)
+
+    def list_collections(self):
+        return utility.list_collections(using=self._my_alias)
+
+    def drop_collection(self, name):
+        return utility.drop_collection(name, using=self._my_alias)
+
+    def create_collection(self, name, schema_dict, **kwargs):
+        fields = []
+        for raw in schema_dict.get("fields", []):
+            params = dict(raw.get("params", {}))
+            fields.append(FieldSchema(
+                name=raw["name"], dtype=raw["type"],
+                is_primary=raw.get("is_primary", False),
+                auto_id=raw.get("auto_id", False), **params))
+        schema = CollectionSchema(fields, auto_id=schema_dict.get("auto_id", False))
+        return Collection(name, schema=schema, using=self._my_alias, **kwargs)
+
+    def create_index(self, name, field_name, index_params):
+        return Collection(name, using=self._my_alias).create_index(field_name, index_params)
+
+    def get_collection_stats(self, name):
+        return {"row_count": Collection(name, using=self._my_alias).num_entities}
+
+    def describe_collection(self, name):
+        return Collection(name, using=self._my_alias).schema
 
     def show_all_collections(self):
         """Print all collection names."""

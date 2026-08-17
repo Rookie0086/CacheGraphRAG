@@ -71,14 +71,49 @@ def get_project_dir():
 
 
 def get_config():
-    # Support CACHEGRAPH_CONFIG env var to specify config file path
+    # 配置加载优先级:
+    #   1) CACHEGRAPH_CONFIG 环境变量(显式指定路径)
+    #   2) 本仓库内 config/config.yaml(base.py 位于 <仓库根>/src/utils/base.py)
+    #   3) PROJECT_BASE_DIR / ~/KGUPDATER/config/config.yaml(历史部署路径)
     if os.environ.get("CACHEGRAPH_CONFIG"):
         config_path = Path(os.environ["CACHEGRAPH_CONFIG"])
     else:
-        project_dir = get_project_dir()
-        config_path = Path(project_dir) / "config" / "config.yaml"
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        repo_config = repo_root / "config" / "config.yaml"
+        if repo_config.exists():
+            config_path = repo_config
+        else:
+            project_dir = get_project_dir()
+            config_path = Path(project_dir) / "config" / "config.yaml"
     config = read_yaml(config_path)
+    # Runtime-only secret/model overrides. This keeps local API credentials out
+    # of tracked YAML and reproducibility snapshots.
+    model_cfg = config.setdefault("model", {})
+    env_overrides = {
+        "CACHEGRAPH_MODEL_BACKEND": "backend",
+        "CACHEGRAPH_MODEL_NAME": "model_name",
+        "CACHEGRAPH_MODEL_BASE_URL": "base_url",
+        "CACHEGRAPH_MODEL_API_KEY": "api_key",
+    }
+    for env_name, config_name in env_overrides.items():
+        if os.environ.get(env_name):
+            model_cfg[config_name] = os.environ[env_name]
     return config
+
+
+def set_global_seed(seed: int = 42) -> None:
+    """设置全局随机种子,保证数据切分/采样可复现。
+
+    注意:LLM API 输出本身非确定性,此种子不控制 API 采样;
+    仅覆盖 random / numpy / torch 的本地随机源。
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+    except ImportError:
+        pass
 
 
 def get_date_now():

@@ -27,16 +27,25 @@ class AsyncEntityResolver:
         embedding_func,
         collection_name="entity_index_example",
         threshold=0.85,
+        desc_threshold=0.6,
         memory_graph=None,
         embed_model=None,
         embedding_concurrency=5,
+        scope: str = "l1",
     ):
         self.milvus_db = MilvusDB(db_name=collection_name, overwrite=False, embed_model=embed_model)
         self.milvus_client = myMilvus()
         self.embed = embedding_func
         self.collection_name = collection_name
+        # τ_sim:强对齐阈值(论文式 5,cos(e_new,e_old)≥τ_sim → 合并)
         self.threshold = threshold
+        # τ_desc:弱语义阈值(论文算法 1 行 9/12/15,同名同型 + desc 相似度判定)
+        self.desc_threshold = desc_threshold
+        # 比对空间范围(论文式 7/算法 1 输入):"l1"= 仅活跃节点集 V_L1;"full"= 实体索引全量(旧行为)
+        self.scope = scope
         self.memory_graph = memory_graph
+        # 本次摄入会话中已对齐/新建的实体 uid(算法 1 的 V_L1 语义:离线批量对齐阶段 L1 尚未写入)
+        self._active_uids: set = set()
         self._embed_semaphore = asyncio.Semaphore(embedding_concurrency)
         self.embed_model = embed_model
         # Dedicated large thread pool: avoid asyncio.to_thread default pool (12 threads) becoming a bottleneck
@@ -155,28 +164,25 @@ class AsyncEntityResolver:
             return ""
         return str(entity_type).strip().lower()
 
-    async def _desc_similarity(self, left: str, right: str) -> float:
-        left_norm = self._normalize_name(left)
-        right_norm = self._normalize_name(right)
-        left_tokens = set(left_norm.split())
-        right_tokens = set(right_norm.split())
+    def _token_jaccard(self, left: str, right: str) -> float:
+        """Token Jaccard 相似度(仅作为嵌入失败时的兜底,非主判定)。"""
+        left_tokens = set(self._normalize_name(left).split())
+        right_tokens = set(self._normalize_name(right).split())
         if not left_tokens or not right_tokens:
             return 0.0
+        return len(left_tokens & right_tokens) / len(left_tokens | right_tokens)
 
-        token_sim = len(left_tokens & right_tokens) / len(left_tokens | right_tokens)
+    async def _desc_similarity(self, left: str, right: str) -> float:
+        """论文算法 1 行 9/12/15:desc 相似度 = cos(d_new, d_old),即纯余弦相似度。
 
-        # Use token_sim for initial filter to avoid unnecessary embedding API calls
-        if token_sim < 0.15:  # Clearly different
-            return token_sim
-        if token_sim > 0.65:  # Clearly same
-            return 0.5 * token_sim + 0.5 * 1.0
-
+        嵌入调用失败时回退到 token Jaccard,避免对齐流程中断。
+        """
         try:
             async with self._embed_semaphore:
                 left_vec, right_vec = await asyncio.gather(
                     self.embed(left), self.embed(right))
         except Exception:
-            return token_sim
+            return self._token_jaccard(left, right)
 
         if hasattr(left_vec, "tolist"):
             left_vec = left_vec.tolist()
@@ -187,10 +193,54 @@ class AsyncEntityResolver:
         right_arr = np.array(right_vec, dtype=float)
         denom = np.linalg.norm(left_arr) * np.linalg.norm(right_arr)
         if denom == 0:
-            return token_sim
-        cos_sim = float(np.dot(left_arr, right_arr) / denom)
+            return 0.0
+        return float(np.dot(left_arr, right_arr) / denom)
 
-        return 0.5 * token_sim + 0.5 * cos_sim
+    def _decide(self, uid) -> str:
+        """登记本次摄入会话的活跃实体 uid 并返回(算法 1 的 V_L1 语义)。
+
+        离线批量对齐阶段 L1 内存图尚未写入,用 _active_uids 记录"已对齐/新建"
+        的实体,使后续实体仍可与它们合并,同时保证比对空间不扩到历史索引全量。
+        """
+        if uid is not None:
+            try:
+                self._active_uids.add(uid)
+            except Exception:
+                pass
+        return uid
+
+    def _in_active_set(self, uid) -> bool:
+        """论文式(7):对齐比对空间限定为活跃节点集 V_L1。
+
+        判定 = 当前 L1 内存图中存续的节点 ∪ 本次摄入会话中已对齐/新建的实体。
+        scope != "l1" 或未绑定 L1 内存图时不做限制(独立使用/旧行为)。
+        """
+        if self.scope != "l1":
+            return True
+        if uid is None:
+            return False
+        if self.memory_graph is None:
+            return True
+        try:
+            if self.memory_graph.graph.has_node(uid) or self.memory_graph.graph.has_node(str(uid)):
+                return True
+        except Exception:
+            pass
+        # uid 类型兜底:int/str 互相转换后仍可命中 L1(防御 Milvus 返回类型差异)
+        try:
+            if self.memory_graph.graph.has_node(int(uid)):
+                return True
+        except (TypeError, ValueError):
+            pass
+        for key in (uid, str(uid)):
+            if key in self._active_uids:
+                return True
+        try:
+            if int(uid) in self._active_uids:
+                return True
+        except (TypeError, ValueError):
+            pass
+        return False
 
     def _is_alias_pair(self, short_name: str, long_name: str) -> bool:
         short_tokens = self._normalize_name(short_name)
@@ -255,14 +305,15 @@ class AsyncEntityResolver:
         if cache_key in self.local_cache:
             return self.local_cache[cache_key]
 
-        # 1.5 Name cache: reuse only if same name+type + desc similarity >= 0.3
+        # 1.5 Name cache: reuse only if same name+type + desc similarity >= τ_desc
+        # (与算法 1 行 9 一致:同名同型且 cos(d_new,d_old)≥τ_desc 才合并)
         name_key = f"{self._normalize_name(entity_name)}|{self._normalize_type(entity_type)}"
         if name_key in self._name_cache:
             cached_uid, cached_desc = self._name_cache[name_key]
             desc_sim = await self._desc_similarity(entity_desc, cached_desc)
-            if desc_sim >= 0.3:
+            if desc_sim >= self.desc_threshold:
                 self.local_cache[cache_key] = cached_uid
-                return cached_uid
+                return self._decide(cached_uid)
 
         # 2. Async vector fetch
         text_to_embed = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
@@ -279,72 +330,78 @@ class AsyncEntityResolver:
         loop = asyncio.get_event_loop()
         results = await loop.run_in_executor(self._search_executor, self._search_milvus, vector, search_params, 50)
         if results and len(results[0]) > 0:
-            hits = results[0]
+            # 论文式(7)/算法 1 输入:比对空间限定为活跃节点集 V_L1
+            # (L1 内存图存续节点 ∪ 本次摄入会话已对齐实体),不扩到历史实体索引全量。
+            hits = [hit for hit in results[0] if self._in_active_set(hit.entity.get("uid"))]
+            if hits:
+                def _name_type_match(hit) -> bool:
+                    return (
+                        self._normalize_name(entity_name) == self._normalize_name(hit.entity.get("name"))
+                        and self._normalize_type(entity_type) == self._normalize_type(hit.entity.get("type"))
+                    )
 
-            def _name_type_match(hit) -> bool:
-                return (
-                    self._normalize_name(entity_name) == self._normalize_name(hit.entity.get("name"))
-                    and self._normalize_type(entity_type) == self._normalize_type(hit.entity.get("type"))
+                exact_hit = next((hit for hit in hits if _name_type_match(hit)), None)
+                alias_hit = next(
+                    (
+                        hit
+                        for hit in hits
+                        if self._normalize_type(entity_type) == self._normalize_type(hit.entity.get("type"))
+                        and (
+                            self._is_abbreviation_or_nickname(entity_name, hit.entity.get("name"))
+                            or self._is_abbreviation_or_nickname(hit.entity.get("name"), entity_name)
+                        )
+                    ),
+                    None,
                 )
 
-            exact_hit = next((hit for hit in hits if _name_type_match(hit)), None)
-            alias_hit = next(
-                (
-                    hit
-                    for hit in hits
-                    if self._normalize_type(entity_type) == self._normalize_type(hit.entity.get("type"))
-                    and (
-                        self._is_abbreviation_or_nickname(entity_name, hit.entity.get("name"))
-                        or self._is_abbreviation_or_nickname(hit.entity.get("name"), entity_name)
-                    )
-                ),
-                None,
-            )
+                top_match = exact_hit or alias_hit or hits[0]
+                exist_uid = top_match.entity.get("uid")
+                exist_name = top_match.entity.get("name")
+                exist_type = top_match.entity.get("type")
+                exist_desc = top_match.entity.get("desc")
+                name_match = self._normalize_name(entity_name) == self._normalize_name(exist_name)
+                type_match = self._normalize_type(entity_type) == self._normalize_type(exist_type)
 
-            top_match = exact_hit or alias_hit or hits[0]
-            exist_uid = top_match.entity.get("uid")
-            exist_name = top_match.entity.get("name")
-            exist_type = top_match.entity.get("type")
-            exist_desc = top_match.entity.get("desc")
-            name_match = self._normalize_name(entity_name) == self._normalize_name(exist_name)
-            type_match = self._normalize_type(entity_type) == self._normalize_type(exist_type)
-            desc_sim = await self._desc_similarity(entity_desc, exist_desc)
+                # 算法 1 行 6-7:cos(e_new,e_old)≥τ_sim → 高置信合并(无需 desc 判定)
+                if top_match.distance >= self.threshold:
+                    self.local_cache[cache_key] = exist_uid
+                    self._name_cache[name_key] = (exist_uid, exist_desc)
+                    return self._decide(exist_uid)
 
-            # Vector distance >= 0.92: high confidence same entity
-            if top_match.distance >= 0.92:
-                self.local_cache[cache_key] = exist_uid
-                self._name_cache[name_key] = (exist_uid, exist_desc)
-                return exist_uid
-            # Same name+type + desc similarity >= 0.6: same entity
-            elif name_match and type_match and desc_sim >= 0.6:
-                self.local_cache[cache_key] = exist_uid
-                self._name_cache[name_key] = (exist_uid, exist_desc)
-                return exist_uid
-            # Same name+type but large desc difference -> different entity, generate new UID
-            elif name_match and type_match and desc_sim < 0.6:
-                new_uid = self._make_uid()
-                self.local_cache[cache_key] = new_uid
-                # Do not update _name_cache, keep first entity as "primary entity"
-                self._maybe_add_edge(new_uid, exist_uid, src_name=entity_name, dst_name=exist_name, relation_type="possible_same_as")
-                task = asyncio.create_task(self._register_new_entity(new_uid, entity_name, entity_type, entity_desc, vector))
-                task.add_done_callback(self._log_task_error)
-                self._pending_tasks.append(task)
-                return new_uid
-            # Same name, different type + similar desc: type extraction deviation, treat as same entity
-            elif name_match and (not entity_type) and (not type_match) and desc_sim >= 0.5:
-                self.local_cache[cache_key] = exist_uid
-                return exist_uid
-            # Abbreviation/short form: create new UID + alias_of edge
-            elif type_match and (self._is_abbreviation_or_nickname(entity_name, exist_name) or self._is_abbreviation_or_nickname(exist_name, entity_name)):
-                new_uid = self._make_uid()
-                self.local_cache[cache_key] = new_uid
-                self._maybe_add_edge(new_uid, exist_uid, src_name=entity_name, dst_name=exist_name, relation_type="alias_of")
-                task = asyncio.create_task(self._register_new_entity(new_uid, entity_name, entity_type, entity_desc, vector))
-                task.add_done_callback(self._log_task_error)
-                self._pending_tasks.append(task)
-                return new_uid
+                if name_match:
+                    # 算法 1 行 9-16:仅同名分支才计算 desc 相似度 cos(d_new,d_old)(论文 τ_desc 语义)
+                    desc_sim = await self._desc_similarity(entity_desc, exist_desc)
+                    if type_match:
+                        if desc_sim >= self.desc_threshold:
+                            # 算法 1 行 9-11:同名同型且 cos(d)≥τ_desc → 合并
+                            self.local_cache[cache_key] = exist_uid
+                            self._name_cache[name_key] = (exist_uid, exist_desc)
+                            return self._decide(exist_uid)
+                        if desc_sim < self.desc_threshold:
+                            # 算法 1 行 12-14:同名同型但 cos(d)<τ_desc → "possible same as" 软边
+                            new_uid = self._make_uid()
+                            self.local_cache[cache_key] = new_uid
+                            # 不更新 _name_cache,保持首实体为"主实体"
+                            self._maybe_add_edge(new_uid, exist_uid, src_name=entity_name, dst_name=exist_name, relation_type="possible_same_as")
+                            task = asyncio.create_task(self._register_new_entity(new_uid, entity_name, entity_type, entity_desc, vector))
+                            task.add_done_callback(self._log_task_error)
+                            self._pending_tasks.append(task)
+                            return self._decide(new_uid)
+                    if desc_sim >= self.desc_threshold:
+                        # 算法 1 行 15-16:同名异型且 cos(d)≥τ_desc → 合并(容忍 LLM 类型偏差,t_new≠t_old)
+                        self.local_cache[cache_key] = exist_uid
+                        return self._decide(exist_uid)
+                elif type_match and (self._is_abbreviation_or_nickname(entity_name, exist_name) or self._is_abbreviation_or_nickname(exist_name, entity_name)):
+                    # 算法 1 行 17-19:同型 + 别名变形 → "alias of" 软边
+                    new_uid = self._make_uid()
+                    self.local_cache[cache_key] = new_uid
+                    self._maybe_add_edge(new_uid, exist_uid, src_name=entity_name, dst_name=exist_name, relation_type="alias_of")
+                    task = asyncio.create_task(self._register_new_entity(new_uid, entity_name, entity_type, entity_desc, vector))
+                    task.add_done_callback(self._log_task_error)
+                    self._pending_tasks.append(task)
+                    return self._decide(new_uid)
 
-        # 5. Cache miss: generate new entity UID and asynchronously register in Milvus
+        # 算法 1 行 20-21:无匹配 → 作为孤立节点加入
         new_uid = self._make_uid()
         self.local_cache[cache_key] = new_uid
         self._name_cache[name_key] = (new_uid, entity_desc)
@@ -353,7 +410,7 @@ class AsyncEntityResolver:
         task.add_done_callback(self._log_task_error)
         self._pending_tasks.append(task)
 
-        return new_uid
+        return self._decide(new_uid)
 
     async def resolve_batch_async(self, entities: list, pre_vectors: Optional[list] = None) -> dict:
         """Batch alignment: one API call for all entity embeddings, then Milvus search + match individually.

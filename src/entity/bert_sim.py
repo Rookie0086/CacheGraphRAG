@@ -1,18 +1,17 @@
 from sentence_transformers import SentenceTransformer, util
-import os
 import torch
 
-os.environ["HF_TOKEN"] = "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"
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-if not os.getenv("HF_TOKEN"):
-    raise ValueError("HF_TOKEN not found")
-
-"""Hugging Face Llama model"""
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
+_bert_model = None
 
-# Use a lightweight sentence-transformer
-bert_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+def _get_model():
+    """Load the evaluation model only when BERT similarity is requested."""
+    global _bert_model
+    if _bert_model is None:
+        _bert_model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2", device=str(device))
+    return _bert_model
 
 def _normalize_texts(value):
     if value is None:
@@ -44,6 +43,7 @@ def bert(response, ground_truth):
     if not response_texts or not ground_truth_texts:
         return 0.0
 
+    bert_model = _get_model()
     query_embedding = bert_model.encode(response_texts, convert_to_tensor=True)
 
     max_score = 0.0

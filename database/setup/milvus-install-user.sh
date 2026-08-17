@@ -2,11 +2,13 @@
 
 # Non-root Milvus standalone helper
 # Usage: bash setup/milvus-install-user.sh start|stop|delete
-# This script does NOT use sudo and stores data under $HOME/.local/share/milvus
+# This script does NOT use sudo and stores data under <项目根>/.milvus
 
 set -euo pipefail
 
-DATA_DIR="$HOME/.local/share/milvus"
+# 项目根目录自动探测(脚本位于 <根>/database/setup/ 下)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+DATA_DIR="${CACHEGRAPH_MILVUS_DIR:-$SCRIPT_DIR/.milvus}"
 VOLUMES_DIR="$DATA_DIR/volumes"
 CONFIG_FILE="$DATA_DIR/embedEtcd.yaml"
 CONTAINER_NAME="milvus-standalone"
@@ -45,9 +47,12 @@ EOF
     docker pull "$IMAGE"
 
     echo "Starting container $CONTAINER_NAME..."
+    # 清理 Docker 注入的宿主机代理,避免容器内部组件通过代理连内部网段失败
     docker run -d \
         --name "$CONTAINER_NAME" \
         --security-opt seccomp:unconfined \
+        -e HTTP_PROXY= -e HTTPS_PROXY= -e http_proxy= -e https_proxy= \
+        -e NO_PROXY='*' -e no_proxy='*' \
         -e ETCD_USE_EMBED=true \
         -e ETCD_DATA_DIR=/var/lib/milvus/etcd \
         -e ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml \

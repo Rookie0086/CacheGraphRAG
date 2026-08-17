@@ -2,10 +2,14 @@
 
 import json
 import re
+import time
+import threading
+import concurrent.futures
 import numpy as np
 from typing import List, Dict
 import networkx as nx
 from src.utils.prompts import prompt_extract_entities_str
+from src.utils import get_config
 from database.milvus import MilvusDB
 
 
@@ -23,13 +27,37 @@ class BaseRetriever:
         self.chunk_registry = chunk_registry or {}
         self.fusion = fusion
         self.mode = mode  # "hybrid" or "graph_only"
+        self.last_latency = {}  # 最近一次 hybrid_retrieve 的分阶段耗时(秒)
+        self.last_rehydrate = {"attempted": 0, "succeeded": 0, "chunk_ids": []}
+        # 跳数衰减 γ 与最大跳数 max_hops(可配置,默认 γ=0.5 / max_hops=3)
+        _cfg_all = get_config()
+        _ret_cfg = _cfg_all.get("retrieval", {})
+        _hyper_cfg = _cfg_all.get("hyperparameters", {})
+        self.gamma = float(_ret_cfg.get("gamma", 0.5))
+        self.max_hops = max(1, int(_ret_cfg.get("max_hops", 3)))
+        # 束搜索宽度 B(论文 IV-E-1:图检索器 Decay-Guided Beam Search):
+        # 每跳扩展后保留 top-B 高分候选路径。0 = 不裁剪(全量扩展)。
+        self.beam_width = max(0, int(_ret_cfg.get("beam_width", _hyper_cfg.get("B", 4))))
+        # Experiment switches. Defaults preserve the paper implementation.
+        self.enable_l1 = bool(_ret_cfg.get("enable_l1", True))
+        self.enable_l2 = bool(_ret_cfg.get("enable_l2", True))
+        self.enable_rehydrate = bool(_ret_cfg.get("enable_rehydrate", True))
+        self.fail_on_l2_error = bool(_ret_cfg.get("fail_on_l2_error", False))
+        # M2(2026-08-15):查询期嵌入并发门控,防止并发查询无上限打爆 embedding API。
+        self._embed_gate = threading.BoundedSemaphore(
+            max(1, int(_ret_cfg.get("embedding_concurrency", 4))))
+        # M2:实体级检索并行度(L1/L2 各实体并发执行,降查询时延)。
+        self.graph_entity_parallel = max(
+            1, int(_ret_cfg.get("graph_entity_parallel", 4)))
 
     # ── Shared Utilities ──────────────────────────────────────────
 
     def _embed_text(self, text: str) -> np.ndarray:
         if not self.llm:
             raise ValueError("LLM env is required for embeddings.")
-        return np.array(self.llm.embed_model.get_embedding(text), dtype=float)
+        # M2:嵌入并发门控(单次同步 HTTP,门控防并发查询无上限打爆 API)
+        with self._embed_gate:
+            return np.array(self.llm.embed_model.get_embedding(text), dtype=float)
 
     def _cosine(self, a: np.ndarray, b: np.ndarray) -> float:
         denom = np.linalg.norm(a) * np.linalg.norm(b)
@@ -51,17 +79,24 @@ class BaseRetriever:
             return float(self.reranker.score(query, passage))
         return 0.0
 
-    def _rehydrate_vector_hits(self, hits: List[Dict]):
-        if not self.memory_graph:
-            return
+    def _rehydrate_vector_hits(self, hits: List[Dict]) -> Dict:
+        stats = {"attempted": 0, "succeeded": 0, "chunk_ids": []}
+        if not self.memory_graph or not getattr(self, "enable_rehydrate", True):
+            return stats
         for hit in hits:
             chunk_id = hit.get("id")
             if not chunk_id or not str(chunk_id).startswith("chunk_"):
                 continue
-            if self.memory_graph.is_chunk_in_l1(chunk_id) or self.memory_graph.is_chunk_in_l2(chunk_id):
+            if self.memory_graph.is_chunk_in_l1(chunk_id):
                 self.memory_graph.touch_chunk(chunk_id)
                 continue
-            self.memory_graph.rehydrate_chunk_from_milvus(chunk_id)
+            # 即使 chunk 已在 L2，也要在 L1 淘汰后从 graph_meta 恢复拓扑。
+            stats["attempted"] += 1
+            if self.memory_graph.rehydrate_chunk_from_milvus(chunk_id):
+                stats["succeeded"] += 1
+                stats["chunk_ids"].append(chunk_id)
+        self.last_rehydrate = stats
+        return stats
 
     # ── DPR ─────────────────────────────────────────────
 
@@ -89,39 +124,62 @@ class BaseRetriever:
                         top_chunks: int = 15, top_rerank: int = 15, answer_topk: int = 6,
                         track_promotion: bool = True):
         """Template method: subclasses override _extract_entities / _handle_promotion."""
+        # 分阶段计时:embed/dpr/entity/graph/aggregate/fusion,供查询时延分析(R2-6.2/R4-W3)
+        _t = time.time
+        _latency = {}
+        self.last_rehydrate = {"attempted": 0, "succeeded": 0, "chunk_ids": []}
+
+        _t0 = _t()
         query_emb = self._embed_text(query)
+        _latency["embed"] = _t() - _t0
 
         # 1. DPR (skipped in graph_only mode)
         vector_hits = []
+        rehydrate_stats = {"attempted": 0, "succeeded": 0, "chunk_ids": []}
         if self.mode != "graph_only":
+            _t1 = _t()
             embedding_res = self.retrieve_from_embedding(query_emb, topk=topk)
             vector_hits = embedding_res.get("embedding_hits", [])
-            self._rehydrate_vector_hits(vector_hits)
+            rehydrate_stats = self._rehydrate_vector_hits(vector_hits)
+            _latency["dpr"] = _t() - _t1
+        else:
+            _latency["dpr"] = 0.0
 
         # 2. Entity extraction + weights (implemented by subclasses)
+        _t2 = _t()
         extracted_entities, query_relations, entity_weights, entity_chunks = \
             self._extract_entities(query_emb, query, top_entities)
+        _latency["entity"] = _t() - _t2
 
-        # 3. Graph retrieval
+        # 3. Graph retrieval (L1 + L2)
+        _t3 = _t()
         memory_res, persistent_res, chunk_entity_coverage = \
             self._graph_retrieve(query_emb, extracted_entities, query_relations,
                                  entity_weights, top_entities, top_chunks, track_promotion)
+        _latency["graph"] = _t() - _t3
 
         # 4. Score aggregation
+        _t4 = _t()
         graph_ranked_chunks = self._aggregate_graph_scores(
             memory_res, persistent_res, top_chunks, query)
+        _latency["aggregate"] = _t() - _t4
 
         # 5. Fusion / graph-only mode
+        _t5 = _t()
         if self.mode == "graph_only":
             # Graph-only retrieval: directly use graph-ranked chunks, skip DPR fusion
             final_chunks = [cid for cid, _ in graph_ranked_chunks[:answer_topk]]
         elif self.fusion:
-            self.fusion._entity_weights = entity_weights
             final_chunks = self.fusion.fuse(query, vector_hits, graph_ranked_chunks,
                                             chunk_entity_coverage, top_rerank, answer_topk)
-            self.fusion.handle_promotion(chunk_entity_coverage, entity_chunks, track_promotion)
+            self.fusion.handle_promotion(
+                chunk_entity_coverage, entity_chunks, track_promotion,
+                entity_weights=entity_weights)
         else:
             final_chunks = []
+        _latency["fusion"] = _t() - _t5
+        _latency["total"] = _t() - _t0
+        self.last_latency = _latency
 
         # Track sources
         dpr_cids = {h["id"] for h in vector_hits}
@@ -146,6 +204,12 @@ class BaseRetriever:
                 "overlap": len(graph_cids & dpr_cids),
                 "n_entities": len(extracted_entities),
                 "n_chunks_covered": len(chunk_entity_coverage),
+                "rehydrate_attempted": rehydrate_stats["attempted"],
+                "rehydrate_succeeded": rehydrate_stats["succeeded"],
+                "rehydrated_chunks": rehydrate_stats["chunk_ids"],
+                "l2_query_errors": sum(int(item.get("l2_query_errors", 0))
+                                       for item in persistent_res),
+                "latency": _latency,
             },
         }
 
@@ -166,17 +230,37 @@ class BaseRetriever:
         memory_res, persistent_res = [], []
         chunk_entity_coverage = {}
 
-        for ent in entities:
+        def _one_entity(ent):
+            """单个实体的 L1+L2 检索(M2:多实体并发执行,降查询时延)。"""
             ew = entity_weights.get(ent["id"], 0)
-            m_res = self._retrieve_memory(query_emb, ent, top_entities, top_chunks,
-                                          relations, ew)
-            memory_res.append(m_res)
-            p_res = self._retrieve_persistent(query_emb, ent, top_entities, top_chunks,
-                                              relations, ew)
-            persistent_res.append(p_res)
-            for cid in set(list(m_res.get("chunk_scores", {}).keys()) +
-                           list(p_res.get("chunk_scores", {}).keys())):
-                chunk_entity_coverage.setdefault(cid, set()).add(ent["id"])
+            m_res = (self._retrieve_memory(query_emb, ent, top_entities, top_chunks,
+                                           relations, ew) if self.enable_l1 else
+                     {"chunks": [], "chunk_scores": {}, "node_scores": {},
+                      "node_chunks": {}, "matched_entities": []})
+            p_res = (self._retrieve_persistent(query_emb, ent, top_entities, top_chunks,
+                                               relations, ew) if self.enable_l2 else
+                     {"chunks": [], "chunk_scores": {}, "node_scores": {},
+                      "node_chunks": {}, "matched_entities": []})
+            return ent["id"], m_res, p_res
+
+        if len(entities) > 1 and self.graph_entity_parallel > 1:
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=min(len(entities), self.graph_entity_parallel),
+                    thread_name_prefix="graph-entity") as ex:
+                for ent_id, m_res, p_res in ex.map(_one_entity, entities):
+                    memory_res.append(m_res)
+                    persistent_res.append(p_res)
+                    for cid in set(list(m_res.get("chunk_scores", {}).keys()) +
+                                   list(p_res.get("chunk_scores", {}).keys())):
+                        chunk_entity_coverage.setdefault(cid, set()).add(ent_id)
+        else:
+            for ent in entities:
+                ent_id, m_res, p_res = _one_entity(ent)
+                memory_res.append(m_res)
+                persistent_res.append(p_res)
+                for cid in set(list(m_res.get("chunk_scores", {}).keys()) +
+                               list(p_res.get("chunk_scores", {}).keys())):
+                    chunk_entity_coverage.setdefault(cid, set()).add(ent_id)
         return memory_res, persistent_res, chunk_entity_coverage
 
     def _retrieve_memory(self, query_emb, ent, top_entities, top_chunks,
@@ -386,6 +470,40 @@ class HybridRetriever(BaseRetriever):
             query_emb, ent["id"], ent["type"], ent["desc"],
             top_entities, top_chunks, relations, entity_weight)
 
+    def _beam_prune_frontier(self, nodes, k, hop, similarity_emb):
+        """束搜索剪枝(论文 IV-E-1):每跳扩展后保留 top-B 高分候选路径。
+
+        打分 = 节点名与查询的余弦相似度 × γ^hop —— 深度衰减因子注入路由打分,
+        与 hop 权重(HOP_WEIGHTS)配合抑制长尾结构噪声。返回顺序:top-B 高分节点
+        在前,其余节点补位在后(保持与原 top-k 剪枝一致的返回契约)。
+        """
+        if k <= 0 or len(nodes) <= k:
+            return nodes
+        graph = self.memory_graph.graph if self.memory_graph is not None else None
+        vs = self._entity_store
+        texts, valid = [], []
+        for n in nodes:
+            # M4:锁内快照读节点属性
+            d = self.memory_graph.snapshot_node_data(n) if self.memory_graph is not None else None
+            d = d or {}
+            name = d.get('name', '') or ''
+            if name.strip():
+                texts.append(f"Entity: {name}. Type: {d.get('type', '') or ''}.")
+                valid.append(n)
+        if not valid:
+            return list(nodes)[:k]
+        # M2:批量嵌入走并发门控
+        with self._embed_gate:
+            embs = vs.embed_model.get_embeddings(texts)
+        decay = self.gamma ** max(0, hop)
+        scored = [(n, self._cosine(similarity_emb, np.array(e, dtype=float)) * decay)
+                  for n, e in zip(valid, embs)]
+        scored.sort(key=lambda x: x[1], reverse=True)
+        top = [n for n, _ in scored[:k]]
+        top_set = set(top)
+        rest = [n for n in nodes if n not in top_set]
+        return top + rest[:max(0, k - len(top))]
+
     def retrieve_from_memory_graph(self, query_emb, entity_name, entity_type,
                                    entity_desc, top_entities=5, top_chunks=5,
                                    query_relations=None, entity_weight=1.0):
@@ -396,7 +514,9 @@ class HybridRetriever(BaseRetriever):
         graph = self.memory_graph.graph
         vs = self._entity_store
         text = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
-        entity_emb = np.array(vs.embed_model.get_embedding(text), dtype=float)
+        # M2:嵌入并发门控(实体嵌入为同步 HTTP)
+        with self._embed_gate:
+            entity_emb = np.array(vs.embed_model.get_embedding(text), dtype=float)
         similarity_emb = query_emb if query_emb is not None else entity_emb
         sp = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         results = self._search_milvus(vs, entity_emb, sp, limit=top_entities)
@@ -415,9 +535,8 @@ class HybridRetriever(BaseRetriever):
         for mid in matched_id_set:
             node_set.update(self.memory_graph.get_nodes_by_id(mid))
 
-        # BFS decay propagation: hop 0=1.0, hop 1=0.5, hop 2=0.3
-        HOP_WEIGHTS = [1.0, 0.5, 0.3]
-        HOP_TOPK = [0, 5, 5]  # hop 0 unlimited, hop 1 take top 5, hop 2 take top 5
+        # BFS 跳数衰减:权重 γ^l(可配置,默认 γ=0.5),遍历深度受 max_hops 约束
+        HOP_WEIGHTS = [self.gamma ** l for l in range(self.max_hops)]
         chunk_scores, node_scores, node_chunks = {}, {}, {}
 
         def add_score(chunks_data, weight):
@@ -429,31 +548,10 @@ class HybridRetriever(BaseRetriever):
                     c = str(c).strip()
                     if c: chunk_scores[c] = chunk_scores.get(c, 0.0) + weight
 
-        def _topk_frontier(nodes, k):
-            """Take top-k by semantic similarity between node name and query."""
-            if k <= 0 or len(nodes) <= k:
-                return nodes
-            texts, valid = [], []
-            for n in nodes:
-                d = graph.nodes.get(n, {})
-                name = d.get('name', '') or ''
-                if name.strip():
-                    texts.append(f"Entity: {name}. Type: {d.get('type', '') or ''}.")
-                    valid.append(n)
-            if not valid:
-                return list(nodes)[:k]
-            embs = vs.embed_model.get_embeddings(texts)
-            scored = [(n, self._cosine(similarity_emb, np.array(e, dtype=float)))
-                      for n, e in zip(valid, embs)]
-            scored.sort(key=lambda x: x[1], reverse=True)
-            top_set = {n for n, _ in scored[:k]}
-            rest = [n for n in nodes if n not in top_set]
-            return list(top_set) + rest[:max(0, k - len(top_set))]
-
         # hop 0: seed entity
         frontier = set(node_set)
         visited = set()
-        for hop in range(10):  # Max 10 hops to prevent infinite loops
+        for hop in range(self.max_hops):  # 遍历深度受 max_hops 约束(默认 3)
             if not frontier:
                 break
             hop_weight = entity_weight * HOP_WEIGHTS[min(hop, len(HOP_WEIGHTS) - 1)]
@@ -462,28 +560,30 @@ class HybridRetriever(BaseRetriever):
                 if uid in visited:
                     continue
                 visited.add(uid)
-                d = graph.nodes.get(uid, {})
+                # M4:锁内快照读节点属性/边,避免与写方(add/evict)并发迭代竞态
+                d = self.memory_graph.snapshot_node_data(uid) or {}
                 # Node chunk weighting
                 add_score(d.get("source_chunks"), hop_weight)
                 node_scores[uid] = node_scores.get(uid, 0) + hop_weight
                 node_chunks.setdefault(uid, set()).update(d.get("source_chunks") or [])
                 # Traverse out-edges, collect next-hop nodes + current edge's chunk
-                for _, neighbor, data in graph.out_edges(uid, data=True):
+                for _, neighbor, data in self.memory_graph.snapshot_edges(uid, "out"):
                     if neighbor not in visited:
                         next_frontier.add(neighbor)
                     chunk = data.get("source_chunk")
                     if chunk:
                         add_score([chunk], hop_weight)
-                for neighbor, _, data in graph.in_edges(uid, data=True):
+                for neighbor, _, data in self.memory_graph.snapshot_edges(uid, "in"):
                     if neighbor not in visited:
                         next_frontier.add(neighbor)
                     chunk = data.get("source_chunk")
                     if chunk:
                         add_score([chunk], hop_weight)
-            # Next hop take top-k (hop 1 take 5, hop 2 take 5, then unlimited)
-            topk = HOP_TOPK[min(hop + 1, len(HOP_TOPK) - 1)]
-            if topk > 0:
-                frontier = set(_topk_frontier(list(next_frontier), topk))
+            # 束搜索剪枝(论文 IV-E-1):下一跳保留 top-B 高分候选路径,
+            # 打分 = 节点-查询余弦相似度 × γ^(hop+1)(深度衰减注入路由打分)。
+            if self.beam_width > 0:
+                frontier = set(self._beam_prune_frontier(
+                    list(next_frontier), self.beam_width, hop + 1, similarity_emb))
             else:
                 frontier = next_frontier
 
@@ -501,8 +601,19 @@ class HybridRetriever(BaseRetriever):
 
         g = self.persistent_graph
         vs = self._entity_store
+        query_errors = []
+
+        def _on_l2_error(operation, exc):
+            message = f"L2 query failed during {operation}: {exc}"
+            if self.fail_on_l2_error:
+                raise RuntimeError(message) from exc
+            query_errors.append(message)
+            print(f"[L2 warning] {message}")
+
         text = f"Entity: {entity_name}. Type: {entity_type}. Description: {entity_desc}"
-        entity_emb = np.array(vs.embed_model.get_embedding(text), dtype=float)
+        # M2:嵌入并发门控(实体嵌入为同步 HTTP)
+        with self._embed_gate:
+            entity_emb = np.array(vs.embed_model.get_embedding(text), dtype=float)
         similarity_emb = query_emb if query_emb is not None else entity_emb
         sp = {"metric_type": "COSINE", "params": {"nprobe": 10}}
         results = self._search_milvus(vs, entity_emb, sp, limit=top_entities)
@@ -529,9 +640,10 @@ class HybridRetriever(BaseRetriever):
                 f"FETCH PROP ON `entity` {vids_str} "
                 "YIELD id(vertex) AS vid, properties(vertex).name AS name, "
                 "properties(vertex).source_chunk AS source_chunk;")
-        except Exception:
+        except Exception as exc:
+            _on_l2_error("seed entity fetch", exc)
             return {"chunks": [], "chunk_scores": {}, "node_scores": {}, "node_chunks": {},
-                    "matched_entities": []}
+                    "matched_entities": [], "l2_query_errors": len(query_errors)}
 
         existing_vids = set(str(v) for v in node_rows.get("vid", []) if v is not None)
         if not existing_vids:
@@ -551,7 +663,8 @@ class HybridRetriever(BaseRetriever):
                     "YIELD id(vertex) AS vid, properties(vertex).name AS name, "
                     "properties(vertex).type AS type, "
                     "properties(vertex).source_chunk AS source_chunk;")
-            except Exception:
+            except Exception as exc:
+                _on_l2_error("node property fetch", exc)
                 return {}
             props = {}
             for idx, vid in enumerate(rows.get("vid", [])):
@@ -572,7 +685,8 @@ class HybridRetriever(BaseRetriever):
                     "YIELD src(edge) AS src, dst(edge) AS dst, "
                     "properties(edge).relationship AS relation, "
                     "properties(edge).source_chunk AS source_chunk;")
-            except Exception:
+            except Exception as exc:
+                _on_l2_error("graph traversal", exc)
                 return {}
 
         def _node_text(row):
@@ -589,16 +703,23 @@ class HybridRetriever(BaseRetriever):
             return [vid for vid, _ in scored[:k]]
 
         base_vids = set(str(v) for v in existing_vids)
-        edge_rows = _run_go(base_vids)
         _collect = lambda rows: {str(v) for k in ("src", "dst") for v in rows.get(k, []) if v is not None}
-        first_hop = _collect(edge_rows) - base_vids
-        top_first = _topk_sim(first_hop, k=5)
-        edge_rows_2 = _run_go(set(top_first))
-        second_hop = _collect(edge_rows_2) - base_vids - set(top_first)
-        top_second = _topk_sim(second_hop, k=5)
 
-        first_props = _fetch_node_props(set(top_first))
-        second_props = _fetch_node_props(set(top_second))
+        # 按 max_hops 逐跳展开:每跳取 topk 相似节点继续前推,边/节点权重 = γ^hop
+        hop_edges = []              # 每跳的 GO 边结果(边 chunk 贡献)
+        hop_props = {}              # hop -> 该跳 topk 节点属性
+        frontier = set(base_vids)
+        visited = set(base_vids)
+        for hop in range(1, self.max_hops):
+            edge_rows = _run_go(frontier)
+            hop_edges.append(edge_rows)
+            next_hop = _collect(edge_rows) - visited
+            top_hop = _topk_sim(next_hop, k=5)
+            if not top_hop:
+                break
+            hop_props[hop] = _fetch_node_props(set(top_hop))
+            visited.update(top_hop)
+            frontier = set(top_hop)
 
         chunk_scores, node_scores, node_chunks = {}, {}, {}
         def add_score(chunks_data, weight):
@@ -613,6 +734,7 @@ class HybridRetriever(BaseRetriever):
         node_vids = node_rows.get("vid", [])
         node_chunk_list = node_rows.get("source_chunk", [])
 
+        # hop 0:seed 实体,权重 entity_weight
         for idx, chunks in enumerate(node_chunk_list):
             add_score(chunks, entity_weight)
             if idx < len(node_vids) and node_vids[idx] is not None:
@@ -620,27 +742,25 @@ class HybridRetriever(BaseRetriever):
                 node_scores[vid] = node_scores.get(vid, 0) + entity_weight
                 node_chunks.setdefault(vid, set()).update(
                     [c.strip() for c in str(chunks).split(",") if c.strip()] if chunks else [])
-        for vid, row in first_props.items():
-            add_score(row.get("source_chunk", ""), 0.5 * entity_weight)
-            node_scores[vid] = node_scores.get(vid, 0) + 0.5 * entity_weight
-            node_chunks.setdefault(vid, set()).update(
-                [c.strip() for c in str(row.get("source_chunk", "")).split(",") if c.strip()]
-                if row.get("source_chunk") else [])
-        for vid, row in second_props.items():
-            add_score(row.get("source_chunk", ""), 0.3 * entity_weight)
-            node_scores[vid] = node_scores.get(vid, 0) + 0.3 * entity_weight
-            node_chunks.setdefault(vid, set()).update(
-                [c.strip() for c in str(row.get("source_chunk", "")).split(",") if c.strip()]
-                if row.get("source_chunk") else [])
-        for chunk in edge_rows.get("source_chunk", []):
-            if chunk: add_score([chunk], 0.5 * entity_weight)
-        for chunk in edge_rows_2.get("source_chunk", []):
-            if chunk: add_score([chunk], 0.3 * entity_weight)
+        # hop ≥1:节点权重 = γ^hop * entity_weight
+        for hop, props in hop_props.items():
+            hop_weight = (self.gamma ** hop) * entity_weight
+            for vid, row in props.items():
+                add_score(row.get("source_chunk", ""), hop_weight)
+                node_scores[vid] = node_scores.get(vid, 0) + hop_weight
+                node_chunks.setdefault(vid, set()).update(
+                    [c.strip() for c in str(row.get("source_chunk", "")).split(",") if c.strip()]
+                    if row.get("source_chunk") else [])
+        # 边 chunk 贡献:第 hop_idx 跳的边权重 = γ^hop_idx * entity_weight
+        for hop_idx, edge_rows in enumerate(hop_edges, start=1):
+            hop_weight = (self.gamma ** hop_idx) * entity_weight
+            for chunk in edge_rows.get("source_chunk", []):
+                if chunk: add_score([chunk], hop_weight)
 
         sorted_chunks = sorted(chunk_scores.items(), key=lambda x: x[1], reverse=True)
         return {"chunks": [c for c, _ in sorted_chunks], "chunk_scores": chunk_scores,
                 "node_scores": node_scores, "node_chunks": {k: list(v) for k, v in node_chunks.items()},
-                "matched_entities": matched}
+                "matched_entities": matched, "l2_query_errors": len(query_errors)}
 
 
 # ================================================================

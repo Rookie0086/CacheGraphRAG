@@ -1,4 +1,5 @@
 import os
+import threading
 import requests
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -9,8 +10,16 @@ class APIReranker:
 
     def __init__(self, model_name: str, api_key: str, base_url: str):
         self.model_name = model_name
-        self.api_key = api_key
+        # 允许环境变量补位(实验框架会 redact config 里的 api_key):
+        # 运行时设置 CACHEGRAPH_RERANK_API_KEY 提供真实 key,避免 401 导致检索结果被丢弃。
+        self.api_key = (api_key or os.getenv("CACHEGRAPH_RERANK_API_KEY")
+                        or os.getenv("CACHEGRAPH_MODEL_API_KEY") or os.getenv("OPENAI_API_KEY"))
         self.base_url = base_url.rstrip("/")
+        # M2(2026-08-15):rerank 并发门控,防止并发查询无上限打爆 rerank API。
+        from src.utils import get_config
+        _ret_cfg = get_config().get("retrieval", {})
+        self._rerank_gate = threading.BoundedSemaphore(
+            max(1, int(_ret_cfg.get("rerank_concurrency", 2))))
 
     def _headers(self) -> dict:
         return {
@@ -34,17 +43,30 @@ class APIReranker:
         if not query or not documents:
             return []
         url = f"{self.base_url}/rerank"
-        try:
-            resp = requests.post(
-                url, headers=self._headers(),
-                json=self._payload(query, documents, top_n),
-                timeout=60,
-            )
-            resp.raise_for_status()
-            return resp.json().get("results", [])
-        except requests.RequestException as e:
-            print(f"[APIReranker] Request failed: {e}")
-            return []
+        # M2:rerank 并发门控(同步 HTTP 调用)
+        with self._rerank_gate:
+            try:
+                resp = requests.post(
+                    url, headers=self._headers(),
+                    json=self._payload(query, documents, top_n),
+                    timeout=60,
+                )
+                resp.raise_for_status()
+                results = resp.json().get("results", [])
+            except requests.RequestException as e:
+                print(f"[APIReranker] Request failed: {e}")
+                return []
+        # 响应归一化:兼容不同服务端字段(SiliconFlow: score/text;oMLX: relevance_score/document.text)
+        norm = []
+        for r in results:
+            if not isinstance(r, dict):
+                continue
+            score = r.get("score", r.get("relevance_score", 0.0))
+            text = r.get("text")
+            if text is None and isinstance(r.get("document"), dict):
+                text = r["document"].get("text", "")
+            norm.append({"index": r.get("index"), "score": score, "text": text})
+        return norm
 
 
 class LocalReranker:
@@ -52,7 +74,11 @@ class LocalReranker:
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Local reranker model not found: {model_path}")
         self.model_path = model_path
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        # 默认设备:cuda > mps(Mac MLX 可用时) > cpu
+        self.device = device or (
+            "cuda" if torch.cuda.is_available()
+            else ("mps" if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available()
+                  else "cpu"))
         self.max_length = max_length
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)

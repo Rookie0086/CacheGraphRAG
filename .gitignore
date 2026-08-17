@@ -175,6 +175,8 @@ celerybeat.pid
 .env
 .envrc
 .venv
+.conda/
+.secrets/
 env/
 venv/
 ENV/
@@ -242,3 +244,18 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local database data dirs (never commit)
+.milvus/
+.nebula/
+
+# Paper PDF (contains author info; keep out of public repo)
+CacheGraphRAG.pdf
+
+# Internal review/work documents (not for public repo)
+rebuttal.md
+revise.md
+code_fix_plan.md
+code_paper_audit.md
+PROGRESS_20260814.md
+工作记录.md

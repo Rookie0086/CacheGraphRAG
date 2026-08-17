@@ -5,6 +5,7 @@ import json
 import os
 import time
 import uuid
+import concurrent.futures
 from typing import Dict, List, Optional, Tuple
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -44,6 +45,20 @@ class DocumentIngestionPipeline:
         self.chunk_registry = {}
         self.llm_cache = LLMCache()
         self.fact_enabled = fact_enabled
+        cfg = __import__("src.utils", fromlist=["get_config"]).get_config()
+        idx_cfg = cfg.get("indexing", {})
+        self._embed_batch_size = max(1, int(idx_cfg.get("embed_batch_size", 64)))
+        self._embed_batch_wait_ms = max(0, int(idx_cfg.get("embed_batch_wait_ms", 10)))
+        self._embed_queue = None
+        self._embed_worker_task = None
+        # M1(2026-08-15):构建期 Milvus 插入专用线程池,不占默认 asyncio.to_thread 池
+        # (默认池与 QA 检索/引擎共享,避免流式 ingest+QA 场景相互挤占)。
+        self._io_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=max(8, int(build_concurrency or 8)),
+            thread_name_prefix="pipeline-io")
+        self.embedding_api_calls = 0
+        self.embedding_items = 0
+        self.embedding_batches = 0
 
         # Vector store (used in stage 2)
         self.vector_store = MilvusDB(db_name=collection_name, overwrite=False, embed_model=embed_model)
@@ -173,6 +188,7 @@ class DocumentIngestionPipeline:
             async with sem:
                 await self._build_single(item)
 
+        await self._start_embed_batcher()
         tasks = [_build_limited(item) for item in extracted]
         success = 0
         with atqdm(total=len(tasks), desc="Ingest", unit="chunk") as pbar:
@@ -185,8 +201,103 @@ class DocumentIngestionPipeline:
                         log.warn(f"Ingest chunk failed: {e}")
                 pbar.update(1)
 
+        await self._stop_embed_batcher()
         await self.entity_resolver.wait_pending()
+        self._flush_vector_stores()
         return success
+
+    def _flush_vector_stores(self):
+        """Make successful ingestion durable and visible to later processes."""
+        stores = [self.vector_store, self.entity_resolver.milvus_db]
+        if self.fact_enabled and self.fact_store is not None:
+            stores.append(self.fact_store)
+        for store in stores:
+            store.flush()
+
+    async def _start_embed_batcher(self):
+        if self._embed_worker_task and not self._embed_worker_task.done():
+            return
+        self._embed_queue = asyncio.Queue()
+        self._embed_worker_task = asyncio.create_task(self._embed_batch_worker())
+
+    async def _stop_embed_batcher(self):
+        if not self._embed_worker_task:
+            return
+        await self._embed_queue.put(None)
+        await self._embed_worker_task
+        self._embed_worker_task = None
+        self._embed_queue = None
+
+    async def _embed_batch_worker(self):
+        """Coalesce embedding requests from multiple chunks into API-sized batches."""
+        loop = asyncio.get_running_loop()
+        pending = []
+        stopping = False
+        while True:
+            request = await self._embed_queue.get()
+            if request is None:
+                self._embed_queue.task_done()
+                stopping = True
+            else:
+                pending.append(request)
+                self._embed_queue.task_done()
+
+            if not stopping and self._embed_batch_wait_ms:
+                await asyncio.sleep(self._embed_batch_wait_ms / 1000.0)
+            while not stopping:
+                try:
+                    nxt = self._embed_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+                if nxt is None:
+                    stopping = True
+                else:
+                    pending.append(nxt)
+                self._embed_queue.task_done()
+
+            if pending:
+                batch, pending = pending, []
+                flat_texts = [text for texts, _ in batch for text in texts]
+                lengths = [len(texts) for texts, _ in batch]
+                try:
+                    vectors = []
+                    for start in range(0, len(flat_texts), self._embed_batch_size):
+                        text_batch = flat_texts[start:start + self._embed_batch_size]
+                        part = await self.llm.embed_model.get_embeddings_async(text_batch)
+                        if hasattr(part, "tolist"):
+                            part = part.tolist()
+                        vectors.extend(part)
+                        self.embedding_api_calls += 1
+                        self.embedding_batches += 1
+                        self.embedding_items += len(text_batch)
+                    if len(vectors) != len(flat_texts):
+                        raise RuntimeError(
+                            f"embedding batch size mismatch: expected {len(flat_texts)}, got {len(vectors)}")
+                    offset = 0
+                    for length, (_, future) in zip(lengths, batch):
+                        if not future.done():
+                            future.set_result(vectors[offset:offset + length])
+                        offset += length
+                except Exception as exc:
+                    for _, future in batch:
+                        if not future.done():
+                            future.set_exception(exc)
+            if stopping:
+                break
+
+    async def _get_embeddings_batched(self, texts: List[str]):
+        if not texts:
+            return []
+        if not self._embed_worker_task or self._embed_worker_task.done():
+            # Compatibility for direct _build_single calls outside build/extract_and_build.
+            vectors = await self.llm.embed_model.get_embeddings_async(texts)
+            self.embedding_api_calls += 1
+            self.embedding_batches += 1
+            self.embedding_items += len(texts)
+            return vectors.tolist() if hasattr(vectors, "tolist") else vectors
+        future = asyncio.get_running_loop().create_future()
+        await self._embed_queue.put((texts, future))
+        return await future
 
     async def extract_and_build(self, texts: List[str]) -> Tuple[int, int]:
         """Pipeline parallel: extraction and ingestion run concurrently.
@@ -216,6 +327,7 @@ class DocumentIngestionPipeline:
         from tqdm import tqdm
         pbar_extract = tqdm(total=total, desc="Extract", unit="chunk", position=0)
         pbar_build = tqdm(total=total, desc="Ingest", unit="chunk", position=1)
+        await self._start_embed_batcher()
 
         queue: asyncio.Queue = asyncio.Queue()
         _SENTINEL = object()
@@ -315,11 +427,13 @@ class DocumentIngestionPipeline:
             await asyncio.gather(*consumers)
 
         pbar_build.close()
+        await self._stop_embed_batcher()
 
         # Save chunk backup + wait for background registration to complete
         os.makedirs("data/chunk", exist_ok=True)
         save_to_json("data/chunk/chunks.json", self.chunk_registry, indent=1)
         await self.entity_resolver.wait_pending()
+        self._flush_vector_stores()
 
         if self.llm_cache.size > 0:
             print(f"  Cache stats: LLM cache has {self.llm_cache.size} entries")
@@ -346,7 +460,8 @@ class DocumentIngestionPipeline:
 
         with tqdm(total=n, desc="Align", unit="ent", position=1, leave=False) as pbar:
             pbar.set_postfix_str("Embedding...")
-            vectors = await self.llm.embed_model.get_embeddings_async(texts)
+            # 离线实体对齐也走批量嵌入通道(按 embed_batch_size 分批),避免单次超大请求超时
+            vectors = await self._get_embeddings_batched(texts)
             if hasattr(vectors, "tolist"):
                 vectors = vectors.tolist()
 
@@ -381,9 +496,10 @@ class DocumentIngestionPipeline:
                     fact_texts.append(_ft)
                     fact_raw.append({"src_name": _s, "tgt_name": _t, "relation": _r, "text": _ft})
         all_texts = [text] + entity_texts + fact_texts
-        all_vectors = await self.llm.embed_model.get_embeddings_async(all_texts)
-        if hasattr(all_vectors, "tolist"):
-            all_vectors = all_vectors.tolist()
+        # Multiple concurrent chunks share one delayed embedding batch.
+        if "_embedding_vectors" not in item:
+            item["_embedding_vectors"] = await self._get_embeddings_batched(all_texts)
+        all_vectors = item["_embedding_vectors"]
         chunk_vector = all_vectors[0]
         entity_vectors = all_vectors[1:1 + len(entities)]
         fact_vectors = all_vectors[1 + len(entities):] if self.fact_enabled else []
@@ -410,7 +526,10 @@ class DocumentIngestionPipeline:
 
         # 4. Write vector store + fact concurrently
         import asyncio as _asyncio
-        insert_tasks = [_asyncio.to_thread(self.vector_store.insert_chunk,
+        # M1:构建期 Milvus 插入走专用 pipeline-io 线程池,不占默认 asyncio.to_thread 池
+        _loop = _asyncio.get_running_loop()
+        insert_tasks = [_loop.run_in_executor(
+            self._io_executor, self.vector_store.insert_chunk,
             chunk_id, chunk_vector,
             [str(v["uid"]) for v in aligned.values()],
             text, {"entities": entities_meta, "relations": relations_meta})]
@@ -428,8 +547,8 @@ class DocumentIngestionPipeline:
                     })
                     fact_vecs.append(fact_vectors[fi])
             if fact_datas:
-                insert_tasks.append(_asyncio.to_thread(
-                    self.fact_store.insert_facts_batch, fact_datas, fact_vecs))
+                insert_tasks.append(_loop.run_in_executor(
+                    self._io_executor, self.fact_store.insert_facts_batch, fact_datas, fact_vecs))
 
         await _asyncio.gather(*insert_tasks)
         t4 = _time.time()
