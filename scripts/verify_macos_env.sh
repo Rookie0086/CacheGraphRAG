@@ -6,7 +6,7 @@ MAC_PY="$REPO_ROOT/.conda/cachegraphrag-mac/bin/python"
 
 if [[ ! -x "$MAC_PY" ]]; then
   echo "macOS environment not found: $MAC_PY" >&2
-  echo "Create it with: conda env create -p .conda/cachegraphrag-mac -f environment-macos.yml" >&2
+  echo "Create it with: conda create -n cachegraphrag python=3.10 && conda activate cachegraphrag && pip install -r requirements.txt" >&2
   exit 1
 fi
 
