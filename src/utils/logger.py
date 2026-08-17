@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import time
+import threading
 from collections import defaultdict
 from typing import Optional
 
@@ -45,6 +46,8 @@ class PipelineLogger:
 
         self._prompt_tokens = 0
         self._completion_tokens = 0
+        self.runtime_metrics = {}
+        self._write_lock = threading.Lock()
 
         self._print(f"Pipeline started | dataset={dataset} | log={self._log_file}")
 
@@ -65,21 +68,23 @@ class PipelineLogger:
             self._buffer.append((line, oneline))
         else:
             end = "\r" if oneline else "\n"
-            print(line, end=end, flush=True)
-            self._handle.write(line + ("\n" if not oneline else ""))
-            self._handle.flush()
+            with self._write_lock:
+                print(line, end=end, flush=True)
+                self._handle.write(line + ("\n" if not oneline else ""))
+                self._handle.flush()
 
     def buffer_on(self):
         self._buffer = []
 
     def buffer_off(self):
         if self._buffer is not None:
-            for line, oneline in self._buffer:
-                self._handle.write(line + ("\n" if not oneline else ""))
-                if not self._qa_mode:
-                    end = "\r" if oneline else "\n"
-                    print(line, end=end, flush=True)
-            self._handle.flush()
+            with self._write_lock:
+                for line, oneline in self._buffer:
+                    self._handle.write(line + ("\n" if not oneline else ""))
+                    if not self._qa_mode:
+                        end = "\r" if oneline else "\n"
+                        print(line, end=end, flush=True)
+                self._handle.flush()
             self._buffer = None
 
     def warn(self, *args):
@@ -164,6 +169,10 @@ class PipelineLogger:
         self._prompt_tokens = prompt
         self._completion_tokens = completion
 
+    def set_runtime_metrics(self, **metrics):
+        """Attach experiment counters to the structured JSON summary."""
+        self.runtime_metrics.update(metrics)
+
     # ── Summary ───────────────────────────────────────────
 
     def summary(self):
@@ -187,6 +196,7 @@ class PipelineLogger:
             "retrieved_chunks_total": sum(self.metrics.get("retrieved_chunks", [])),
             "prompt_tokens": self._prompt_tokens,
             "completion_tokens": self._completion_tokens,
+            **self.runtime_metrics,
         }
 
         total_tokens = self._prompt_tokens + self._completion_tokens

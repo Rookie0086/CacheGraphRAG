@@ -10,7 +10,7 @@ import threading
 from collections import Counter, OrderedDict
 import networkx as nx
 import numpy as np
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from pymilvus.exceptions import MilvusException
 from tqdm import tqdm
 from difflib import SequenceMatcher
@@ -43,6 +43,9 @@ class MemoryGraphManager:
         self.entity_access_counter = {}
         self.threshold = promotion_threshold
         self._id_index = {}
+        # M4(2026-08-15):_id_index 脏标记——图结构变更(add/evict/load)后置脏,
+        # 检索侧 _rebuild_id_index 仅在有变更时重建,避免每实体/每查询 O(V) 全量重建。
+        self._id_index_dirty = True
         self.chunk_vector_store = chunk_vector_store
         self.nebula_IO_count = 0
         self.capacity_limit = capacity_limit
@@ -68,6 +71,16 @@ class MemoryGraphManager:
             "graph_write": 0.0,
             "milvus_insert": 0.0,
         }
+        # 驱逐可观测计数(LRU/TTL),供 summary 与 rebuttal 上报(R4-W4-1/6)
+        self.evicted_chunks = 0
+        self.evicted_nodes = 0
+        self.evicted_edges = 0
+        # 延迟拓扑重载统计(R4-W4-2):从 Milvus graph_meta 恢复到 L1。
+        self.rehydrate_attempts = 0
+        self.rehydrate_successes = 0
+        self.rehydrate_failures = 0
+        self.rehydrated_nodes = 0
+        self.rehydrated_edges = 0
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
         self._pruner_thread = None
@@ -171,6 +184,7 @@ class MemoryGraphManager:
                 self._evict_chunk_locked(candidate)
 
     def _evict_chunk_locked(self, chunk_id: str):
+        self.evicted_chunks += 1
         node_ids = self.chunk_nodes.get(chunk_id, set())
         for uid in node_ids:
             if not self.graph.has_node(uid):
@@ -189,30 +203,48 @@ class MemoryGraphManager:
                         if not self._id_index[key]:
                             del self._id_index[key]
                 self.graph.remove_node(uid)
+                self.evicted_nodes += 1
 
-        edge_keys = self.chunk_edges.get(chunk_id, set())
+        edge_keys = list(self.chunk_edges.get(chunk_id, set()))
         for u, v, key in edge_keys:
             if not self.graph.has_edge(u, v, key=key):
+                # 节点删除已连带删除该边,仍计入驱逐边数
+                self.evicted_edges += 1
                 continue
             data = self.graph[u][v][key]
             data["ref_count"] = max(0, int(data.get("ref_count", 0)) - 1)
             if data.get("ref_count", 0) <= 0:
                 self.graph.remove_edge(u, v, key=key)
+                self.evicted_edges += 1
 
         self.chunk_nodes.pop(chunk_id, None)
         self.chunk_edges.pop(chunk_id, None)
         self.chunk_meta.pop(chunk_id, None)
         if chunk_id in self.chunk_lru:
             self.chunk_lru.pop(chunk_id, None)
+        # 淘汰时清空访问计数,避免晋升计数跨生命周期累积
+        self.chunk_access_counter.pop(chunk_id, None)
+        # M4:图结构变更 → _id_index 置脏
+        self._id_index_dirty = True
 
     def rehydrate_chunk_from_milvus(self, chunk_id: str) -> bool:
+        self.rehydrate_attempts += 1
         if not self.chunk_vector_store or not chunk_id:
+            self.rehydrate_failures += 1
             return False
-        graph_meta = self.chunk_vector_store.get_chunk_graph_meta(chunk_id)
+        try:
+            graph_meta = self.chunk_vector_store.get_chunk_graph_meta(chunk_id)
+        except Exception as exc:
+            self.rehydrate_failures += 1
+            print(f"[MemoryGraph] rehydrate failed for {chunk_id}: {exc}")
+            return False
         if not graph_meta:
+            self.rehydrate_failures += 1
             return False
         entities = graph_meta.get("entities") or []
         relations = graph_meta.get("relations") or []
+        restored_nodes = 0
+        restored_edges = 0
         for ent in entities:
             uid = ent.get("uid")
             if uid is None:
@@ -224,6 +256,7 @@ class MemoryGraphManager:
                 source_chunk=chunk_id,
                 desc=ent.get("desc", ""),
             )
+            restored_nodes += 1
         for rel in relations:
             src_uid = rel.get("src_uid") or rel.get("src")
             tgt_uid = rel.get("tgt_uid") or rel.get("tgt")
@@ -236,26 +269,77 @@ class MemoryGraphManager:
                 relation_type=rel_type,
                 source_chunk=chunk_id,
             )
+            restored_edges += 1
+        # 空或损坏的 graph_meta 不得制造只有 LRU 元数据、没有拓扑的伪 L1 命中。
+        if restored_nodes == 0:
+            self.rehydrate_failures += 1
+            return False
         self.touch_chunk(chunk_id)
         self.prune_if_needed()
+        # 容量极小时，该 chunk 可能在 prune 中立即被淘汰；此时不报告成功。
+        if not self.is_chunk_in_l1(chunk_id):
+            self.rehydrate_failures += 1
+            return False
+        self.rehydrate_successes += 1
+        self.rehydrated_nodes += restored_nodes
+        self.rehydrated_edges += restored_edges
         return True
 
     def _rebuild_id_index(self):
-        self._id_index = {}
+        """重建 Id→节点集索引(M4:脏标记避免重复全量重建;全程持锁防迭代竞态)。"""
         with self._lock:
+            if not self._id_index_dirty:
+                return
+            self._id_index = {}
             nodes = list(self.graph.nodes(data=True))
-        for node_id, data in nodes:
-            node_attr_id = data.get("Id")
-            # Backfill Id from node key to build index table
-            if node_attr_id is None:
-                data["Id"] = node_id
-                node_attr_id = node_id
-            key = str(node_attr_id)
-            self._id_index.setdefault(key, set()).add(node_id)
+            for node_id, data in nodes:
+                node_attr_id = data.get("Id")
+                # Backfill Id from node key to build index table
+                if node_attr_id is None:
+                    data["Id"] = node_id
+                    node_attr_id = node_id
+                key = str(node_attr_id)
+                self._id_index.setdefault(key, set()).add(node_id)
+            self._id_index_dirty = False
 
     def get_nodes_by_id(self, node_id_value: str):
         # print(self._id_index)  # Debug: print current ID index state
         return self._id_index.get(str(node_id_value), set())
+
+    def snapshot_node_data(self, uid) -> Optional[dict]:
+        """锁内浅拷贝节点属性(M4:读方与写方并发时,避免迭代/引用竞态)。
+
+        返回的 dict 为拷贝,后续写方修改图不影响本次读取。
+        """
+        with self._lock:
+            data = self.graph.nodes.get(uid)
+            if data is None:
+                return None
+            sc = data.get("source_chunks")
+            return {
+                "_uid": uid,
+                "name": data.get("name", ""),
+                "type": data.get("type", ""),
+                "desc": data.get("desc", ""),
+                "source_chunk": data.get("source_chunk", ""),
+                "source_chunks": set(sc) if isinstance(sc, (set, list, tuple)) else (sc or set()),
+                "ref_count": data.get("ref_count", 0),
+                "last_access_time": data.get("last_access_time", 0),
+            }
+
+    def snapshot_edges(self, uid, direction: str = "out", keys: bool = False) -> list:
+        """锁内拷贝节点的出/入边列表(M4:写方 add/evict 不打断读方迭代)。"""
+        with self._lock:
+            if not self.graph.has_node(uid):
+                return []
+            if direction == "in":
+                return list(self.graph.in_edges(uid, data=True, keys=keys))
+            return list(self.graph.out_edges(uid, data=True, keys=keys))
+
+    def snapshot_all_edges(self) -> list:
+        """锁内拷贝全图边(M4:_extract_subgraph_by_chunk 边遍历兜底路径)。"""
+        with self._lock:
+            return list(self.graph.edges(data=True, keys=True))
 
     def _normalize_attrs_for_export(self, g: nx.MultiDiGraph) -> nx.MultiDiGraph:
         export_g = g.copy()
@@ -284,12 +368,34 @@ class MemoryGraphManager:
 
     def _restore_attrs_after_import(self, g: nx.MultiDiGraph) -> nx.MultiDiGraph:
         for _, data in g.nodes(data=True):
-            if "source_chunks" in data and isinstance(data["source_chunks"], list):
-                data["source_chunks"] = set(data["source_chunks"])
+            if "source_chunks" in data:
+                value = data["source_chunks"]
+                if isinstance(value, str):
+                    data["source_chunks"] = {v.strip() for v in value.split(",") if v.strip()}
+                elif isinstance(value, (list, tuple)):
+                    data["source_chunks"] = set(value)
         for _, _, _, data in g.edges(data=True, keys=True):
             if "source_chunk" in data and isinstance(data["source_chunk"], list):
                 data["source_chunk"] = set(data["source_chunk"])
         return g
+
+    def _rebuild_chunk_indexes(self):
+        """Recreate LRU/ref-count indexes after loading a graph snapshot."""
+        now_ts = time.time()
+        self.chunk_meta.clear()
+        self.chunk_nodes.clear()
+        self.chunk_edges.clear()
+        self.chunk_lru.clear()
+        for uid, data in self.graph.nodes(data=True):
+            for chunk_id in data.get("source_chunks", set()) or set():
+                self._ensure_chunk_entry_locked(str(chunk_id), now_ts)
+                self.chunk_nodes.setdefault(str(chunk_id), set()).add(uid)
+        for src, tgt, key, data in self.graph.edges(data=True, keys=True):
+            chunk_id = data.get("source_chunk")
+            if chunk_id:
+                chunk_id = str(chunk_id)
+                self._ensure_chunk_entry_locked(chunk_id, now_ts)
+                self.chunk_edges.setdefault(chunk_id, set()).add((src, tgt, key))
 
     def save_graph_graphml(self, path: str):
         from networkx.readwrite.graphml import write_graphml_xml
@@ -303,7 +409,11 @@ class MemoryGraphManager:
         if not isinstance(g, nx.MultiDiGraph):
             g = nx.MultiDiGraph(g)
         self.graph = self._restore_attrs_after_import(g)
+        self._id_index_dirty = True  # M4:新图结构 → 强制重建
         self._rebuild_id_index()
+        with self._lock:
+            self._rebuild_chunk_indexes()
+        self.prune_if_needed()
 
     def save_graph_gexf(self, path: str):
         # Backup existing file with timestamp if it exists
@@ -324,10 +434,16 @@ class MemoryGraphManager:
         if not isinstance(g, nx.MultiDiGraph):
             g = nx.MultiDiGraph(g)
         self.graph = self._restore_attrs_after_import(g)
+        self._id_index_dirty = True  # M4:新图结构 → 强制重建
         self._rebuild_id_index()
+        with self._lock:
+            self._rebuild_chunk_indexes()
+        self.prune_if_needed()
         raw = self.graph.graph.get("chunk_access_counter", "{}")
+        self.chunk_access_counter.clear()
         self.chunk_access_counter.update(json.loads(raw))
         raw = self.graph.graph.get("entity_access_counter", "{}")
+        self.entity_access_counter.clear()
         self.entity_access_counter.update(json.loads(raw))
 
     def add_node(self, uid: str, name: str, type: str, source_chunk: str, desc: str = ""):
@@ -368,6 +484,8 @@ class MemoryGraphManager:
             if node_attr_id is not None:
                 key = str(node_attr_id)
                 self._id_index.setdefault(key, set()).add(uid)
+            # M4:图结构变更 → _id_index 置脏(下次检索重建)
+            self._id_index_dirty = True
 
     def add_edge(self, src_uid: str, tgt_uid: str, relation_type: str, source_chunk: str):
         """Add an edge. Each edge is bound to a source_chunk."""
@@ -400,6 +518,8 @@ class MemoryGraphManager:
                 )
             if edge_set is not None:
                 edge_set.add(edge_key)
+            # M4:图结构变更 → _id_index 置脏(下次检索重建)
+            self._id_index_dirty = True
 
     def promote_by_convergence(self, chunk_entity_coverage: dict, threshold: int = 3):
         """Convergence promotion: chunk hit by >= threshold different query entities -> promote to L2.
@@ -478,11 +598,12 @@ class MemoryGraphManager:
                 uid_key = _coerce_graph_uid(uid)
                 if uid_key is not None:
                     node_set.add(uid_key)
-                    promoted_nodes_dict[uid_key] = self.graph.nodes[uid_key]
+                    promoted_nodes_dict[uid_key] = self.snapshot_node_data(uid_key)
 
             seen_edges = set()
             for uid in list(node_set):
-                for u, v, key, data in self.graph.out_edges(uid, data=True, keys=True):
+                # M4:锁内快照读边,避免与写方(add/evict)并发迭代竞态
+                for u, v, key, data in self.snapshot_edges(uid, "out", keys=True):
                     if data.get("source_chunk") != chunk_id:
                         continue
                     edge_key = (u, v, key)
@@ -491,10 +612,10 @@ class MemoryGraphManager:
                     seen_edges.add(edge_key)
                     promoted_edges.append({"src": u, "tgt": v, "relation": data["relation"]})
                     if u not in promoted_nodes_dict:
-                        promoted_nodes_dict[u] = self.graph.nodes[u]
+                        promoted_nodes_dict[u] = self.snapshot_node_data(u)
                     if v not in promoted_nodes_dict:
-                        promoted_nodes_dict[v] = self.graph.nodes[v]
-                for u, v, key, data in self.graph.in_edges(uid, data=True, keys=True):
+                        promoted_nodes_dict[v] = self.snapshot_node_data(v)
+                for u, v, key, data in self.snapshot_edges(uid, "in", keys=True):
                     if data.get("source_chunk") != chunk_id:
                         continue
                     edge_key = (u, v, key)
@@ -503,9 +624,9 @@ class MemoryGraphManager:
                     seen_edges.add(edge_key)
                     promoted_edges.append({"src": u, "tgt": v, "relation": data["relation"]})
                     if u not in promoted_nodes_dict:
-                        promoted_nodes_dict[u] = self.graph.nodes[u]
+                        promoted_nodes_dict[u] = self.snapshot_node_data(u)
                     if v not in promoted_nodes_dict:
-                        promoted_nodes_dict[v] = self.graph.nodes[v]
+                        promoted_nodes_dict[v] = self.snapshot_node_data(v)
             # print(f"Chunk {chunk_id} has {len(promoted_nodes_dict)} nodes and {len(promoted_edges)} edges promoted.")
             return {
                 "chunk_id": chunk_id,
@@ -514,7 +635,8 @@ class MemoryGraphManager:
             }
 
         # Iterate all edges, filter those belonging to this chunk
-        for u, v, key, data in self.graph.edges(data=True, keys=True):
+        # M4:锁内快照全图边,避免与写方并发迭代竞态
+        for u, v, key, data in self.snapshot_all_edges():
             if data.get("source_chunk") == chunk_id:
                 # Record edge
                 promoted_edges.append({
@@ -524,9 +646,9 @@ class MemoryGraphManager:
                 })
                 # Record associated nodes (prevent duplicates)
                 if u not in promoted_nodes_dict:
-                    promoted_nodes_dict[u] = self.graph.nodes[u]
+                    promoted_nodes_dict[u] = self.snapshot_node_data(u)
                 if v not in promoted_nodes_dict:
-                    promoted_nodes_dict[v] = self.graph.nodes[v]
+                    promoted_nodes_dict[v] = self.snapshot_node_data(v)
         # print("Use edge-based promotion for chunk", chunk_id)
         return {
             "chunk_id": chunk_id,

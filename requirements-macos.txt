@@ -1,0 +1,35 @@
+# CacheGraphRAG runtime for macOS arm64 (API-based LLM/embedding/reranker).
+# Python 3.10 is recommended. GPU-only packages are intentionally excluded.
+setuptools<81  # PyMilvus 2.5 still imports pkg_resources.
+numpy>=1.26,<2.1
+PyYAML>=6.0
+requests>=2.31
+httpx==0.27.0
+socksio==1.0.0
+openai>=1.40,<2
+pydantic>=2.7,<3
+tenacity>=8.2,<10
+tqdm>=4.66
+networkx>=3.2,<4
+prettytable>=3.10
+python-dotenv>=1.0
+
+# Storage clients
+pymilvus==2.5.0
+nebula3-python==3.5.0
+
+# Text chunking and model interfaces imported by the current runtime.
+langchain-text-splitters>=0.2,<1
+transformers==4.46.2
+sentence-transformers>=3.1,<4
+torch>=2.3,<2.6
+ollama==0.3.0
+llama-index-core==0.12.0
+llama-index-llms-ollama==0.4.0
+
+# Evaluation/runtime utilities.
+pandas>=2.1,<3
+scipy>=1.11,<2
+scikit-learn>=1.4,<2
+rouge>=1.0.1
+bert-score>=0.3.13

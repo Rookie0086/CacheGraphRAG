@@ -1,72 +1,105 @@
 data:
-  dataset: rgb_en_refine
-  end: 300
+  dataset: wikimultihopqa
+  end: 600
   start: 0
-
-model:
-  backend: ollama
-  model_name: llama3.1:8b
-  base_url: http://localhost:11434
-
+  save_gexf: false    # 构建后是否写 L1 拓扑 gexf 快照(仅观察/调试用,不计入存储审计;需要观察 L1 时设 true)
 embedding:
-  backend: ollama
-  model_name: nomic-embed-text
-  base_url: http://localhost:11434
-
-retrieval:
-  mode: hybrid           # RGB baseline = 混合检索(DPR+图)
-  entity_extraction: llm     # baseline 使用 LLM 提取实体
-  skip_index: false
-  index_only: false
-  nebula_space: rgb_en_refine
-  chunk_collection: rgb_en_refine
-  entity_index_name: entity_index_rgb_en_refine
-  top_chunks: 15
-  answer_topk: 6
-  batch_size: 20
-  qa_cache: true
-  use_llm_cache: true
-  clear_l2: true
-  agentic: false
-  stream_mode: false
-  noise_flush_docs: 0
-  promotion_expansion: 10
-  promotion_retries: 2
-  qa_concurrency: 5
-  resume_gexf: ''
-
+  api_key: ''             # 本地服务用 .secrets/local_llm_key(经 CACHEGRAPH_EMBED_API_KEY 注入)
+  backend: api
+  base_url: http://127.0.0.1:8000/v1   # 本地 bge-m3-mlx-4bit(siliconflow 402 期间切换;云实验改回 api.siliconflow.cn/v1)
+  model_name: bge-m3-mlx-4bit
+fact_retrieval:
+  enabled: false
+  entity_convergence_threshold: 3
+  fact_collection_prefix: fact_index
+  topk_entities: 10
+  topk_facts: 100
+fusion:
+  convergence_boost: 1.3
+  convergence_threshold: 2
+  dpr_weight: 0.5
+  graph_reserve: 2
+  method: rrf
+  overlap_boost: 3.0
+  overlap_reserve: 2
+  rrf_k: 60
+incremental_experiment:
+  enabled: false
+hyperparameters:
+  C_max: 200         # L1 缓存容量上限(对应 indexing.l1_max_chunks,中档#7已激活)
+  tau_hit: 3         # 晋升阈值(对应 indexing.promotion_threshold)
+  tau_sim: 0.85      # 实体强对齐阈值(对应 retrieval.alignment_threshold,论文式5)
+  tau_desc: 0.6      # 实体弱语义阈值(对应 retrieval.alignment_desc_threshold,算法1行9/12/15)
+  B: 4               # 束搜索宽度(对应 retrieval.beam_width,图检索束搜索 2026-08-15 接入)
+  gamma: 0.5         # 跳数衰减系数(对应 retrieval.gamma,中档#8已激活)
 indexing:
-  chunk_size: 800
-  chunk_overlap: 100
-  l1_max_chunks: 0
-  l1_max_nodes: 0
-  l1_ttl_seconds: 3600
   build_concurrency: 15
   chunk_concurrency: 20
+  embed_batch_size: 64       # 跨 chunk 延迟嵌入最大文本数
+  embed_batch_wait_ms: 10    # 聚合等待窗口;0 表示只合并已排队请求
+  chunk_overlap: 100
+  chunk_size: 800
+  l1_max_chunks: 200    # C_max: L1 内存缓存容量上限(0 = 无限制)
+  l1_max_nodes: 0
+  l1_ttl_seconds: 3600
   llm_concurrency: 20
   offline_alignment: true
   promotion_threshold: 3
   prune_interval: 5
-
-fusion:
-  method: rrf
-  rrf_k: 60
-  dpr_weight: 0.5
-  graph_reserve: 2
-  overlap_reserve: 2
-  overlap_boost: 3.0
-  convergence_threshold: 2
-  convergence_boost: 1.3
-
-rerank:
-  backend: local
-  model_name: BAAI/bge-reranker-v2-m3
-
-fact_retrieval:
-  enabled: false
-
+model:
+  backend: openai
+  api_key: ''             # 凭据经 CACHEGRAPH_MODEL_API_KEY 环境变量注入(不硬编码,防泄露)
+  base_url: https://gptgod.cloud/v1
+  model_name: gpt-4o-mini
+  max_concurrency: 10  # 全局 LLM 在途请求上限;实测 gptgod 无显式限速,8~16 最优,32 超时
+  seed: 42
 quality_promotion:
   enabled: false
-
-incremental_experiment:
-  enabled: false
+rerank:
+  api_key: ''             # 本地服务用 .secrets/local_llm_key(经 CACHEGRAPH_RERANK_API_KEY 注入)
+  backend: api             # api = oMLX 8000 端口 /v1/rerank;local = transformers 本地加载
+  base_url: http://127.0.0.1:8000/v1
+  local_path: /Users/Zhuanz1/Documents/OMLX_MODEL/BAAI/bge-reranker-v2-m3   # (local 备用)
+  model_name: bge-reranker-v2-m3
+retrieval:
+  mode: hybrid  # hybrid=混合(DPR+图), graph_only=纯图检索(原始baseline)
+  load_gexf: false  # L1 空启动模型:默认 false——启动/QA 不加载 base gexf,L1 由 DPR 命中触发
+                    # Milvus graph_meta 延迟重载逐步填充至容量上限(论文 IV-C Lazy Rehydration);
+                    # true = 从构建期 gexf 快照预填 L1(旧行为)
+  gamma: 0.5     # γ:跳数衰减系数(中档#8,权重=γ^hop,默认0.5)
+  max_hops: 3    # 图遍历最大跳数(中档#8,默认3)
+  beam_width: 4  # B:智能查询拆解束宽;1 时严格退化为原贪心路径
+  agentic_parallelism: 2  # Mac/MLX 稳妥默认;总并发约为 qa_concurrency×该值
+  agentic_batch_planning: true  # 同一 beam 层的下一步规划合并为一次 LLM 请求
+  semantic_dup_threshold: 0.95  # 循环阻断语义查重阈值(中档#9,余弦相似度≥该值视为重复)
+  unknown_tolerance: 2          # UNKNOWN 连续无结果容忍次数(中档#9,达到则提前结束)
+  agentic: true     # 默认开启智能查询拆解(多跳推理精度主因;关闭=单轮检索)
+  agentic_steps: 3
+  answer_aware_promotion: false
+  answer_topk: 6
+  batch_size: 20
+  chunk_collection: wikimultihopqa
+  clear_l2: true      # agentic v1：清空 L2 基线
+  entity_extraction: milvus
+  entity_index_name: entity_index_wikimultihopqa
+  entity_promotion_threshold: 3
+  alignment_threshold: 0.85     # τ_sim：实体强对齐阈值(论文式5,cos(e_new,e_old)≥τ_sim 合并)
+  alignment_desc_threshold: 0.6 # τ_desc：实体弱语义阈值(算法1行9/12/15,同名同型+cos(d_new,d_old)≥τ_desc 判定)
+  alignment_scope: "l1"         # 实体对齐比对空间:l1=活跃节点集 V_L1(论文式7/算法1);full=实体索引全量(旧行为)
+  embedding_concurrency: 4      # M2：查询期嵌入并发门控上限(防并发查询无上限打爆 API)
+  rerank_concurrency: 2         # M2：rerank 并发门控上限
+  graph_entity_parallel: 4      # M2：实体级图检索并行度(L1/L2 各实体并发执行,降查询时延)
+  index_only: false
+  nebula_space: wikimultihopqa
+  noise_flush_docs: 0
+  promotion_expansion: 10
+  promotion_retries: 2
+  qa_cache: true      # 实时保存每一条结果到 json/
+  qa_concurrency: 5     # agentic 模式降低并发
+  resume_gexf: ''     # v1：不从已有 gexf 恢复
+  warmup_ratio: 0.15  # 预热/测试隔离:预热集占比(中档#11,>0 时启用两阶段协议)
+  warmup_seed: 42     # 预热/测试切分随机种子(中档#11,保证可复现)
+  skip_index: true
+  stream_mode: false
+  top_chunks: 15
+  use_llm_cache: true

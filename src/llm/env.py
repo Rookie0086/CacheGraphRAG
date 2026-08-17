@@ -1,7 +1,9 @@
 import argparse
 import asyncio
 import os
+import threading
 import time
+import concurrent.futures
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -12,8 +14,10 @@ except ImportError:  # Python < 3.8
     from typing_extensions import Literal
 
 import numpy as np
+import requests
 import torch
 import yaml
+import httpx
 from llama_index.llms.ollama import Ollama
 from openai import OpenAI,AsyncOpenAI
 from pydantic import BaseModel, Field
@@ -128,7 +132,17 @@ class APIEmbeddingEnv:
     ):
         self.model_name = model_name
         self.normalize = normalize
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        # 凭据允许从环境变量补位:实验框架(scripts/experiments)会用
+        # redact_credentials 把写入 case 目录的 config 里的 api_key 置空,
+        # 运行时通过 CACHEGRAPH_EMBED_API_KEY 提供真实 key,避免 401。
+        self.api_key = (api_key or os.getenv("CACHEGRAPH_EMBED_API_KEY")
+                        or os.getenv("CACHEGRAPH_MODEL_API_KEY") or os.getenv("OPENAI_API_KEY"))
+        self.base_url = (base_url or os.getenv("OPENAI_API_BASE")
+                         or "https://api.openai.com/v1").rstrip("/")
+        self._http_session = requests.Session()
+        if self.base_url.startswith(("http://127.0.0.1", "http://localhost",
+                                     "https://127.0.0.1", "https://localhost")):
+            self._http_session.trust_env = False
         # Call once to get dimension
         test_emb = self._call_api("test")
         self.dim = len(test_emb)
@@ -138,22 +152,46 @@ class APIEmbeddingEnv:
         import time
         delay = 1.0
         single = isinstance(text_or_texts, str)
+        # Some OpenAI-compatible embedding servers accept only array input.
+        # The official API accepts arrays too, so normalize both paths here.
+        api_input = [text_or_texts] if single else text_or_texts
         for attempt in range(_retries):
             try:
-                resp = self.client.embeddings.create(model=self.model_name, input=text_or_texts)
+                resp = self._http_session.post(
+                    f"{self.base_url}/embeddings",
+                    headers={"Authorization": f"Bearer {self.api_key}",
+                             "Content-Type": "application/json"},
+                    json={"model": self.model_name, "input": api_input},
+                    timeout=120,
+                )
+                resp.raise_for_status()
+                payload = resp.json()
+                data = sorted(payload.get("data", []), key=lambda item: item.get("index", 0))
+                embeddings = [item["embedding"] for item in data]
+                if not embeddings:
+                    raise RuntimeError(f"embedding API returned no vectors: {payload}")
                 if single:
-                    return resp.data[0].embedding
-                return [d.embedding for d in resp.data]
+                    return embeddings[0]
+                return embeddings
             except Exception as e:
                 err_str = str(e)
-                if "429" in err_str or "rate" in err_str.lower():
-                    if attempt >= _retries - 1:
-                        raise
-                elif "400" in err_str or "20015" in err_str:
-                    if attempt >= _retries - 1:
-                        raise
-                    # 400 may be a temporary issue, retry
-                else:
+                # 网络层瞬时异常(连接重置/读超时)与限流一样值得退避重试:
+                # 硅流在并发下会偶发 RemoteDisconnected / Read timed out,
+                # 直接 raise 会让单次抖动杀死整个 QA/构建流程(实验#27)。
+                is_transient = (
+                    isinstance(e, (requests.exceptions.ConnectionError,
+                                   requests.exceptions.Timeout,
+                                   requests.exceptions.ProxyError))
+                    or "429" in err_str or "rate" in err_str.lower()
+                    or "20015" in err_str
+                    or (isinstance(e, requests.exceptions.HTTPError)
+                        and getattr(e.response, "status_code", None) in (500, 502, 503, 504))
+                    # 400 可能是瞬时,保留原重试语义
+                    or "400" in err_str
+                )
+                if not is_transient:
+                    raise
+                if attempt >= _retries - 1:
                     raise
                 time.sleep(delay)
                 delay *= 2
@@ -300,7 +338,47 @@ class BaseLLMEnv(ABC):
         pass
 
 
-class OpenAIEnv(BaseLLMEnv):
+class UsageRecordingMixin:
+    """Accumulate prompt/completion token usage from OpenAI-style responses.
+
+    任何能拿到 OpenAI 兼容响应(含 ``response.usage.prompt_tokens`` /
+    ``completion_tokens``)的后端都可混入此类,使门面层的
+    ``total_prompt_tokens`` / ``total_completion_tokens`` 在所有后端下都能
+    真实累计(原实现只在 OpenAIEnv 里记账,deepseek/ollama 等后端恒为 0,
+    影响 R3-W4 的 token/成本上报)。用法:__init__ 里调 ``self._init_usage()``,
+    每次成功调用后调 ``self._record_usage(response)``。
+    """
+
+    def _init_usage(self):
+        self.total_prompt_tokens = 0
+        self.total_completion_tokens = 0
+        self._usage_lock = threading.Lock()
+
+    def _record_usage(self, response):
+        """Parse usage from an OpenAI-style response and accumulate tokens.
+
+        同时兼容对象形式(openai SDK 的 CompletionUsage)与 dict 形式
+        (部分代理/本地服务直接返回 JSON)。
+        """
+        usage = getattr(response, "usage", None)
+        if usage is None:
+            return
+        if hasattr(usage, "model_dump"):
+            usage = usage.model_dump()
+        if isinstance(usage, dict):
+            prompt = usage.get("prompt_tokens")
+            completion = usage.get("completion_tokens")
+        else:
+            prompt = getattr(usage, "prompt_tokens", None)
+            completion = getattr(usage, "completion_tokens", None)
+        if not prompt and not completion:
+            return
+        with self._usage_lock:
+            self.total_prompt_tokens += prompt or 0
+            self.total_completion_tokens += completion or 0
+
+
+class OpenAIEnv(UsageRecordingMixin, BaseLLMEnv):
 
     def __init__(
         self,
@@ -315,24 +393,21 @@ class OpenAIEnv(BaseLLMEnv):
         base_url = base_url or os.getenv("OPENAI_API_BASE")
         if not api_key or not base_url:
             raise ValueError("OpenAI api_key and base_url must be provided")
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        local_url = base_url.startswith(("http://127.0.0.1", "http://localhost",
+                                         "https://127.0.0.1", "https://localhost"))
+        sync_http = httpx.Client(trust_env=not local_url, timeout=300)
+        async_http = httpx.AsyncClient(trust_env=not local_url, timeout=300)
+        self.client = OpenAI(base_url=base_url, api_key=api_key, http_client=sync_http)
         self.asyclient = AsyncOpenAI(
             base_url=base_url,
             api_key=api_key,
             timeout=300,
+            http_client=async_http,
             default_headers={'RITS_API_KEY': os.environ["RITS_API_KEY"]} if os.environ.get("RITS_API_KEY") else None
         )
-        # Accumulate token usage
-        self.total_prompt_tokens = 0
-        self.total_completion_tokens = 0
+        # Accumulate token usage (shared mixin, see UsageRecordingMixin)
+        self._init_usage()
         print(f"Initialized OpenAIEnv with model={self.model}, base_url={base_url}, temperature={self.temperature}")
-
-    def _record_usage(self, response):
-        """Parse usage from response and accumulate token counts."""
-        usage = getattr(response, "usage", None)
-        if usage is not None:
-            self.total_prompt_tokens += (usage.prompt_tokens or 0)
-            self.total_completion_tokens += (usage.completion_tokens or 0)
 
     def _flatten_rich_text(self, node) -> str:
         """Extract plain text content from the interface custom message structure."""
@@ -415,7 +490,7 @@ class OpenAIEnv(BaseLLMEnv):
             return None
 
 
-class DeepSeekEnv(BaseLLMEnv):
+class DeepSeekEnv(UsageRecordingMixin, BaseLLMEnv):
 
     def __init__(
         self,
@@ -431,6 +506,10 @@ class DeepSeekEnv(BaseLLMEnv):
         if not api_key or not base_url:
             raise ValueError("DeepSeek api_key and base_url must be provided")
         self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.asyclient = AsyncOpenAI(base_url=base_url, api_key=api_key, timeout=300)
+        # Accumulate token usage (shared mixin; DeepSeek 官方 API 返回标准
+        # OpenAI usage 字段,见 UsageRecordingMixin)
+        self._init_usage()
 
     def complete(self, prompt, verbose=False, return_info=False):
         try:
@@ -445,9 +524,36 @@ class DeepSeekEnv(BaseLLMEnv):
                 temperature=self.temperature,
                 stream=False,
             )
-            return response.choices[0].message.content.strip()
+            self._record_usage(response)
+            content = response.choices[0].message.content
+            return content.strip() if content else None
         except Exception as e:
             print(f"Error in LLM API call: {e}")
+            return None
+
+    async def async_complete(self, prompt, verbose=False, return_info=False):
+        """异步路径:deepseek 后端同样需要(agentic / pipeline 均走此入口)。
+
+        与 OpenAIEnv.async_complete 语义一致:成功才累计 token,失败返回 None。
+        """
+        try:
+            response = await self.asyclient.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=self.temperature,
+                stream=False,
+            )
+            self._record_usage(response)
+            if getattr(response, "choices", None):
+                message = response.choices[0].message
+                if message and message.content:
+                    return message.content.strip()
+            return None
+        except Exception as e:
+            from src.utils.logger import get_logger
+            log = get_logger()
+            if log:
+                log.warn(f"LLM API async call failed: {e}")
             return None
 
 
@@ -961,6 +1067,37 @@ class LLMEnv:
         else:
             raise ValueError(f"Unsupported backend: {backend}")
 
+        # LLM 调用次数统计(与后端无关,统一在门面层累计)
+        self.total_calls = 0
+        self._counter_lock = threading.Lock()
+        model_cfg = get_config().get("model", {})
+        self.max_concurrency = max(1, int(model_cfg.get("max_concurrency", 2)))
+        # H3(2026-08-15):sync/async 统一为单一并发门控(threading.BoundedSemaphore)。
+        # 原实现 sync(complete,跑在线程)与 async(async_complete,跑在事件循环)各持
+        # 一把独立信号量,agentic + 流水线/作答混合负载下实际在途请求可达 2×max_concurrency。
+        # async 侧在专用小线程池 _gate_acquirer 上执行 acquire,不占默认线程池,
+        # 规避"阻塞 acquire 占满默认线程池 → 与持许可请求互等"的死锁风险(见 async_complete)。
+        self._request_gate = threading.BoundedSemaphore(self.max_concurrency)
+        self._gate_acquirer = concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.max_concurrency + 1, thread_name_prefix="llm-gate")
+        self._inflight = 0
+        self.max_inflight_observed = 0
+
+    def _record_call(self):
+        with self._counter_lock:
+            self.total_calls += 1
+
+    def _enter_request(self):
+        self._request_gate.acquire()
+        with self._counter_lock:
+            self._inflight += 1
+            self.max_inflight_observed = max(self.max_inflight_observed, self._inflight)
+
+    def _leave_request(self):
+        with self._counter_lock:
+            self._inflight -= 1
+        self._request_gate.release()
+
     def chat(
         self,
         context: str,
@@ -969,6 +1106,7 @@ class LLMEnv:
         verbose: bool = False,
         return_info: bool = False,
     ):
+        self._record_call()
         return self.llm.chat(
             context, query, idx=idx, verbose=verbose, return_info=return_info
         )
@@ -994,7 +1132,13 @@ class LLMEnv:
         last_exc = None
         for attempt in range(self._MAX_RETRIES):
             try:
-                return self.llm.complete(prompt, verbose=verbose, return_info=return_info)
+                self._enter_request()
+                try:
+                    resp = self.llm.complete(prompt, verbose=verbose, return_info=return_info)
+                finally:
+                    self._leave_request()
+                self._record_call()  # 仅成功响应计入调用次数
+                return resp
             except Exception as exc:
                 last_exc = exc
                 if attempt >= self._MAX_RETRIES - 1:
@@ -1015,9 +1159,24 @@ class LLMEnv:
         last_exc = None
         for attempt in range(self._MAX_RETRIES):
             try:
-                return await self.llm.async_complete(
-                    prompt, verbose=verbose, return_info=return_info
-                )
+                # H3:与同步 complete 共用同一把 threading 信号量,杜绝双门控 2× 并发;
+                # acquire 放在专用小线程池 _gate_acquirer 执行,阻塞等待不占默认线程池。
+                acquire_fut = self._gate_acquirer.submit(self._enter_request)
+                try:
+                    await asyncio.wrap_future(acquire_fut)
+                except asyncio.CancelledError:
+                    # acquire 可能在后台线程已完成:若已持许可则立即归还,避免许可泄漏
+                    if not acquire_fut.cancelled():
+                        self._leave_request()
+                    raise
+                try:
+                    resp = await self.llm.async_complete(
+                        prompt, verbose=verbose, return_info=return_info
+                    )
+                finally:
+                    self._leave_request()
+                self._record_call()  # 仅成功响应计入调用次数
+                return resp
             except Exception as exc:
                 print_text(f"Error in async LLM API call (attempt {attempt + 1}/{self._MAX_RETRIES}): {exc}", color="red")
                 last_exc = exc
@@ -1033,14 +1192,16 @@ class LLMEnv:
 
     @property
     def total_prompt_tokens(self) -> int:
-        """Accumulated input token count (only supported by OpenAI backend)."""
+        """Accumulated input token count (OpenAI-compatible backends that
+        record usage: openai / deepseek; other backends report 0)."""
         if hasattr(self.llm, "total_prompt_tokens"):
             return self.llm.total_prompt_tokens
         return 0
 
     @property
     def total_completion_tokens(self) -> int:
-        """Accumulated output token count (only supported by OpenAI backend)."""
+        """Accumulated output token count (OpenAI-compatible backends that
+        record usage: openai / deepseek; other backends report 0)."""
         if hasattr(self.llm, "total_completion_tokens"):
             return self.llm.total_completion_tokens
         return 0

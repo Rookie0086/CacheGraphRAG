@@ -15,7 +15,8 @@ class BaseFusion:
         """Returns final_chunks. Subclasses override."""
         raise NotImplementedError
 
-    def handle_promotion(self, chunk_entity_coverage, entity_chunks, track_promotion):
+    def handle_promotion(self, chunk_entity_coverage, entity_chunks, track_promotion,
+                         entity_weights=None):
         """Promotion hook. Subclasses may optionally override."""
         pass
 
@@ -65,7 +66,8 @@ class RRFFusion(BaseFusion):
         fused = [cid for cid, _ in sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)[:pool_size]]
         return self._rerank(query, fused, answer_topk)
 
-    def handle_promotion(self, chunk_entity_coverage, entity_chunks, track_promotion):
+    def handle_promotion(self, chunk_entity_coverage, entity_chunks, track_promotion,
+                         entity_weights=None):
         """Traditional access_chunk promotion."""
         if not track_promotion:
             return
@@ -133,11 +135,12 @@ class WeightedFusion(BaseFusion):
         ranked = [cid for cid, _ in sorted(fused.items(), key=lambda x: x[1], reverse=True)[:pool_size]]
         return self._rerank(query, ranked, answer_topk)
 
-    def handle_promotion(self, chunk_entity_coverage, entity_chunks, track_promotion):
+    def handle_promotion(self, chunk_entity_coverage, entity_chunks, track_promotion,
+                         entity_weights=None):
         """Weighted convergence promotion."""
-        if not track_promotion or not hasattr(self, '_entity_weights'):
+        if not track_promotion:
             return
-        ew = self._entity_weights
+        ew = entity_weights or {}
         if not ew:
             return
         sorted_weights = sorted(ew.values())

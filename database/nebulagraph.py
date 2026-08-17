@@ -3,6 +3,7 @@ import os
 import re
 import sys
 import time
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -129,6 +130,19 @@ class NebulaClient:
             # Only register exit hook when session is successfully obtained
             atexit.register(self._atexit_close)
 
+        # H1(2026-08-15):NebulaClient 的单 session 非线程安全(单连接),
+        # 加锁串行化所有 session.execute 调用。热数据路径(query/upsert)走
+        # NebulaDB._session_pool(SessionPool,按调用取会话,本身线程安全);
+        # 此处防御 DDL/建库等 setup 路径与任何回退路径的并发执行。
+        self._session_lock = threading.RLock()
+
+    def _execute(self, stmt: str):
+        """线程安全地执行单 session 语句(串行化)。"""
+        with self._session_lock:
+            if self.session is None:
+                raise RuntimeError("Nebula session is None; nebula features unavailable.")
+            return self.session.execute(stmt)
+
     def _atexit_close(self):
         # Skip network I/O during exit phase
         if hasattr(sys, "is_finalizing") and sys.is_finalizing():
@@ -153,31 +167,31 @@ class NebulaClient:
 
     def create_space(self, db_name):
         """Create graph space (string VID type, for legacy triplet storage)."""
-        self.session.execute(
+        self._execute(
             f"CREATE SPACE IF NOT EXISTS {db_name}(vid_type=FIXED_STRING(256), partition_num=1, replica_factor=1);"
         )
         time.sleep(10)
-        self.session.execute(
+        self._execute(
             f"USE {db_name}; CREATE TAG IF NOT EXISTS entity(name string);"
         )
-        self.session.execute(
+        self._execute(
             f"USE {db_name}; CREATE EDGE IF NOT EXISTS relationship(relationship string);"
         )
-        self.session.execute(
+        self._execute(
             f"USE {db_name}; CREATE TAG INDEX IF NOT EXISTS entity_index ON entity(name(256));"
         )
         time.sleep(10)
 
     def create_graph_space(self, db_name):
         """Create graph space (INT64 VID type, for CacheGraphRAG L2 persistent graph storage, with source_chunk attribute)."""
-        self.session.execute(
+        self._execute(
             f"CREATE SPACE IF NOT EXISTS {db_name}(vid_type=INT64, partition_num=10, replica_factor=1);"
         )
         time.sleep(10)
-        self.session.execute(
+        self._execute(
             f"USE {db_name}; CREATE TAG IF NOT EXISTS entity(name string, type string, source_chunk string);"
         )
-        self.session.execute(
+        self._execute(
             f"USE {db_name}; CREATE EDGE IF NOT EXISTS relationship(relationship string, source_chunk string);"
         )
 
@@ -185,16 +199,16 @@ class NebulaClient:
         if not isinstance(db_name, list):
             db_name = [db_name]
         for space in db_name:
-            self.session.execute(f"drop space {space}")
+            self._execute(f"drop space {space}")
 
     def info(self, db_name):
         # Switch space
-        use_resp = self.session.execute(f"USE {db_name};")
+        use_resp = self._execute(f"USE {db_name};")
         if not use_resp.is_succeeded():
             print_resp(use_resp)
             return
 
-        submit_resp = self.session.execute("SUBMIT JOB STATS;")
+        submit_resp = self._execute("SUBMIT JOB STATS;")
         if not submit_resp.is_succeeded():
             print_resp(submit_resp)
             return
@@ -202,7 +216,7 @@ class NebulaClient:
         # Wait for stats job to complete
         for _ in range(10):
             time.sleep(1)
-            stats_resp = self.session.execute("SHOW STATS;")
+            stats_resp = self._execute("SHOW STATS;")
             if stats_resp.is_succeeded():
                 print_resp(stats_resp)
                 return
@@ -210,21 +224,21 @@ class NebulaClient:
         print("show stats still not successful, please retry later.")
 
     def count_edges(self, db_name):
-        result = self.session.execute(
+        result = self._execute(
             f"use {db_name}; MATCH (m)-[e]->(n) RETURN COUNT(*);"
         )
         print_resp(result)
 
     def show_space(self):
-        result = self.session.execute("SHOW SPACES;")
+        result = self._execute("SHOW SPACES;")
         print_resp(result)
         return result
 
     def get_all_db_name(self):
-        # result = self.session.execute('SHOW SPACES LIKE rgb2;')
+        # result = self._execute('SHOW SPACES LIKE rgb2;')
         # print('all_db_name:', result)
 
-        result = self.session.execute("SHOW SPACES;")
+        result = self._execute("SHOW SPACES;")
         names = result.column_values(key="Name")
         # names = [x.get_value() for x in names]
         print("all_db_name:", names)
@@ -232,14 +246,14 @@ class NebulaClient:
         return names
 
     def show_edges(self, db_name, limits):
-        result = self.session.execute(
+        result = self._execute(
             f"use {db_name}; MATCH ()-[e]->() RETURN e LIMIT {limits};"
         )
         print_resp(result)
 
     def clear(self, db_name):
         query = f"CLEAR SPACE {db_name};"
-        self.session.execute(query)
+        self._execute(query)
 
     def save_triplets(self, db_name, file_path=None):
         if not file_path:
@@ -250,7 +264,7 @@ class NebulaClient:
         save_to_json(file_path=file_path, data=all_triples)
 
     def get_triplets(self, db_name):
-        result = self.session.execute(
+        result = self._execute(
             f"use {db_name}; MATCH (n1)-[e]->(n2) RETURN n1, e, n2;"
         )
 
@@ -432,6 +446,9 @@ class NebulaDB:
         self._session_pool_kwargs = session_pool_kwargs
 
         self._session_pool: Any = session_pool
+        # H1(2026-08-15):并发连接错误重试时 execute() 会触发 init_session_pool 重建,
+        # 需锁保护,避免多线程同时重建导致会话池泄漏/属性竞态。
+        self._pool_lock = threading.Lock()
         if self._session_pool is None:
             try:
                 self.init_session_pool()
@@ -508,34 +525,35 @@ class NebulaDB:
 
     def init_session_pool(self) -> Any:
         """Return NebulaGraph session pool."""
-        from nebula3.Config import SessionPoolConfig
-        from nebula3.gclient.net.SessionPool import SessionPool
+        with self._pool_lock:
+            from nebula3.Config import SessionPoolConfig
+            from nebula3.gclient.net.SessionPool import SessionPool
 
-        # ensure "NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS" are set
-        # in environment variables
-        if not all(
-            key in os.environ
-            for key in ["NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS"]
-        ):
-            raise ValueError(
-                "NEBULA_USER, NEBULA_PASSWORD, NEBULA_ADDRESS should be set in "
-                "environment variables when NebulaGraph Session Pool is not "
-                "directly passed."
+            # ensure "NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS" are set
+            # in environment variables
+            if not all(
+                key in os.environ
+                for key in ["NEBULA_USER", "NEBULA_PASSWORD", "NEBULA_ADDRESS"]
+            ):
+                raise ValueError(
+                    "NEBULA_USER, NEBULA_PASSWORD, NEBULA_ADDRESS should be set in "
+                    "environment variables when NebulaGraph Session Pool is not "
+                    "directly passed."
+                )
+            graphd_host, graphd_port = os.environ["NEBULA_ADDRESS"].split(":")
+            session_pool = SessionPool(
+                os.environ["NEBULA_USER"],
+                os.environ["NEBULA_PASSWORD"],
+                self._space_name,
+                [(graphd_host, int(graphd_port))],
             )
-        graphd_host, graphd_port = os.environ["NEBULA_ADDRESS"].split(":")
-        session_pool = SessionPool(
-            os.environ["NEBULA_USER"],
-            os.environ["NEBULA_PASSWORD"],
-            self._space_name,
-            [(graphd_host, int(graphd_port))],
-        )
 
-        seesion_pool_config = SessionPoolConfig()
-        session_pool.init(seesion_pool_config)
-        self._session_pool = session_pool
+            seesion_pool_config = SessionPoolConfig()
+            session_pool.init(seesion_pool_config)
+            self._session_pool = session_pool
 
-        # print('self._session_pool', self._session_pool)
-        return self._session_pool
+            # print('self._session_pool', self._session_pool)
+            return self._session_pool
 
     def _get_vid_type(self) -> str:
         """Get vid type."""
