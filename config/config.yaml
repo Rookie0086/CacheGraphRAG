@@ -48,7 +48,7 @@ retrieval:
   qa_concurrency: 5
   resume_gexf: ''
   # ── Graph traversal hyperparameters ──
-  gamma: 0.5                  # hop-decay weight (gamma^l): hop0=1.0, hop1=0.5, hop2=0.3
+  gamma: 0.5                  # hop-decay weight (gamma^l)
   B: 5                         # beam width (top-B nodes per hop for graph traversal)
   max_hops: 10                 # max BFS hops to prevent infinite loops
 
