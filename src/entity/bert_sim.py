@@ -1,18 +1,22 @@
-from sentence_transformers import SentenceTransformer, util
+"""BERTScore semantic similarity using sentence-transformers.
+
+Model is lazily loaded on first call to avoid import-time overhead.
+"""
+
 import os
-import torch
+from typing import Optional
 
-os.environ["HF_TOKEN"] = "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"
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-if not os.getenv("HF_TOKEN"):
-    raise ValueError("HF_TOKEN not found")
+_model = None
 
-"""Hugging Face Llama model"""
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
 
-# Use a lightweight sentence-transformer
-bert_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+def _get_model():
+    """Lazily load the sentence-transformer model."""
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+    return _model
+
 
 def _normalize_texts(value):
     if value is None:
@@ -39,16 +43,20 @@ def bert(response, ground_truth):
     @param ground_truth: the ground truth of the question
     @return: the cosine similarity
     """
+    from sentence_transformers import util
+    import torch
+
     response_texts = _normalize_texts(response)
     ground_truth_texts = _normalize_texts(ground_truth)
     if not response_texts or not ground_truth_texts:
         return 0.0
 
-    query_embedding = bert_model.encode(response_texts, convert_to_tensor=True)
+    model = _get_model()
+    query_embedding = model.encode(response_texts, convert_to_tensor=True)
 
     max_score = 0.0
     for gt in ground_truth_texts:
-        text_embedding = bert_model.encode([gt], convert_to_tensor=True)
+        text_embedding = model.encode([gt], convert_to_tensor=True)
         cosine_score = util.pytorch_cos_sim(query_embedding, text_embedding)
         score = float(cosine_score.max().item())
         if score > max_score:

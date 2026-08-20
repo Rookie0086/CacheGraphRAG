@@ -1,3 +1,13 @@
+"""L1 memory graph manager.
+
+This module implements the L1 cache layer referenced in the paper:
+- L1CachePolicy (LRU + TTL eviction): capacity bound C_max, TTL expiry, and
+  LRU-ordered eviction of cold chunks (prune_if_needed / _evict_chunk_locked).
+- rehydrate_chunk_from_milvus(): Lazy Topology Rehydration — rebuilds a chunk's
+  subgraph topology from vector-store metadata without LLM calls.
+- L2 promotion: subgraphs passing h(c) >= tau_hit are written to NebulaGraph.
+"""
+
 import asyncio
 import time
 import json
@@ -21,6 +31,8 @@ from src.llm.env import LLMEnv
 from database.milvus import MilvusDB, myMilvus
 from database.nebulagraph import NebulaClient, NebulaDB
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
 class MemoryGraphManager:
     def __init__(
     self,

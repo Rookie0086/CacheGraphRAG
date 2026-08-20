@@ -360,27 +360,4 @@ def generate_sample_idx(range_length, num):
     return sampled_idx
 
 
-if __name__ == "__main__":
 
-    predict = "I"
-    answer = "I. Hill committed multiple thefts in January 2022. On 15th January, she stole a gold necklace valued at approximately £2,000 from a high-end jewelry shop. On 20th January, she took several electronic gadgets, including a brand new Apple iPhone and a Samsung tablet, from a local electronics store, with a total value of approximately £1,500. On 24th January, she shoplifted various high-value cosmetics and skincare products summing up to £800 from a prominent beauty shop. On 29th January, she executed a theft at a supermarket, taking groceries and alcohol worth £450."
-
-    predict = "hello goodbye"
-    answer = "goodbye"
-
-    predict = "the cat is not there"
-    answer = "the cat is on the mat"
-
-    # >>> rouge = evaluate.load('rouge')
-    # >>> predictions = ["hello goodbye", "ankh morpork"]
-    # >>> references = ["goodbye", "general kenobi"]
-    # >>> results = rouge.compute(predictions=predictions,
-    # ...                         references=references,
-    # ...                         use_aggregator=False)
-    # >>> print(list(results.keys()))
-    # ['rouge1', 'rouge2', 'rougeL', 'rougeLsum']
-    # >>> print(results["rouge1"])
-    # [0.5, 0.0]
-
-    score = checkanswer_rougel(predict, answer)
-    print(score)

@@ -27,35 +27,23 @@ from src.llm.env import LLMEnv
 from database.milvus import MilvusDB
 from database.nebulagraph import NebulaClient
 from src.pipeline import DocumentIngestionPipeline
-from src.graph.memory_graph import MemoryGraphManager
+from src.memory_graph import MemoryGraphManager
 from src.entity.resolver import AsyncEntityResolver
-from src.retrieval.retriever import HybridRetriever, FactRetriever
+from src.retriever import HybridRetriever, FactRetriever
 from src.retrieval.fusion import RRFFusion, WeightedFusion, DualFusion
 from src.retrieval.reranker import APIReranker, LocalReranker
-from src.retrieval.agentic_engine import IterativeAgenticEngine
+from src.IterativeAgenticEngine import IterativeAgenticEngine
 from data.rgb import get_rgb_info
-from data.multihop import get_multihop_info
-from data.dragonball import get_dragonball_info
-from data.squad import get_squad_info
 from data.hotpotqa import get_hotpotqa_info, get_hotpotqa_corpus
-from data.ectqa import get_ectqa_info
-from data.whoqa import get_whoqa_ex_info
-from data.cond import get_cond_info
+from data.specificqa import get_specificqa_info
 from data.wikimultihopqa import get_2wikimultihopqa_info
-from data.musique import get_musique_info
 
 
 _DATASET_LOADERS = {
     "rgb": lambda ds: get_rgb_info(file=ds[4:]),
-    "dragonball": lambda _: get_dragonball_info("en", "Factual Question"),
     "wikimultihopqa": lambda _: get_2wikimultihopqa_info(),  # Must be before "multihop" to avoid partial match
-    "multihop": lambda _: get_multihop_info(),
-    "squad": lambda _: get_squad_info(file="dev"),
     "hotpotqa": lambda _: get_hotpotqa_info(file="hotpot_dev_distractor_v1", num=600),
-    "ectqa": lambda _: get_ectqa_info(corpus_file="new.jsonl.gz"),
-    "whoqa": lambda _: get_whoqa_ex_info(limit=600, update=True),
-    "cond": lambda _: get_cond_info(file="cond"),
-    "musique": lambda _: get_musique_info(limit=300),
+    "specificqa": lambda _: get_specificqa_info(limit=600, update=True),
 }
 
 _CORPUS_LOADERS: dict = {
@@ -220,11 +208,11 @@ class CacheGraphRAG:
             backend=backend,
             llm_config=llm_cfg,
             embed_config=embed_cfg,
-            l1_max_chunks=idx_cfg.get("l1_max_chunks", 100),
+            l1_max_chunks=idx_cfg.get("C_max", idx_cfg.get("l1_max_chunks", 100)),
             l1_max_nodes=l1_max_nodes,
             l1_ttl_seconds=idx_cfg.get("l1_ttl_seconds", 3600),
             prune_interval=idx_cfg.get("prune_interval", 5),
-            promotion_threshold=idx_cfg.get("promotion_threshold", 3),
+            promotion_threshold=idx_cfg.get("tau_hit", idx_cfg.get("promotion_threshold", 3)),
             llm_concurrency=idx_cfg.get("llm_concurrency", 10),
             chunk_concurrency=idx_cfg.get("chunk_concurrency", 5),
             build_concurrency=idx_cfg.get("build_concurrency", 3),
@@ -238,10 +226,10 @@ class CacheGraphRAG:
 
     def load_dataset(self, start: int = 0, end: int = -1):
         """Load and slice dataset."""
-        if "whoqa" in self.dataset:
+        if "specificqa" in self.dataset:
             update = self.build_phase == "incremental"
-            data_info = get_whoqa_ex_info(limit=600, update=update)
-            print(f"[whoqa] build_phase={self.build_phase}, update={update}, loading phase_{'2' if update else '1'}_data")
+            data_info = get_specificqa_info(limit=600, update=update)
+            print(f"[specificqa] build_phase={self.build_phase}, update={update}, loading phase_{'2' if update else '1'}_data")
         else:
             loader = self._resolve_loader()
             data_info = loader(self.dataset)
@@ -260,10 +248,6 @@ class CacheGraphRAG:
 
         if not mismatch_texts:
             self.texts = self.texts[start:end]
-        elif self.dataset == "squad":
-            self.texts = self.texts[start:(end // 5)]
-        elif self.dataset == "ectqa":
-            self.texts = self.texts[start:100]
 
         print(f"questions: {len(self.questions)}, answers: {len(self.answers)}, texts: {len(self.texts)}")
         return self
@@ -298,12 +282,15 @@ class CacheGraphRAG:
     async def ingest(self, texts: List[str]) -> "CacheGraphRAG":
         print("\n--- [Ingestion] ---")
         fact_cfg = get_config().get("fact_retrieval", {})
+        ea_cfg = get_config().get("entity_alignment", {})
         resolver = AsyncEntityResolver(
             collection_name="entity_index_" + self.nebula_space,
             embedding_func=self.llm.embed_model.get_embedding_async,
             memory_graph=self.mem_graph,
             embed_model=self.llm.embed_model,
             embedding_concurrency=20,
+            threshold=ea_cfg.get("tau_sim", 0.85),
+            tau_desc=ea_cfg.get("tau_desc", 0.5),
         )
         idx_cfg = get_config().get("indexing", {})
         self.pipeline = DocumentIngestionPipeline(
@@ -473,6 +460,9 @@ class CacheGraphRAG:
                 **common_args,
                 entity_extraction=entity_extraction,
                 mode=mode,
+                gamma=ret_cfg.get("gamma", 0.5),
+                B=ret_cfg.get("B", 5),
+                max_hops=ret_cfg.get("max_hops", 10),
             )
 
         # ── Fusion Strategy (skipped in graph_only mode) ──
@@ -495,7 +485,7 @@ class CacheGraphRAG:
                     rrf_k=fusion_cfg.get("rrf_k", 60),
                 )
             else:
-                fusion = RRFFusion(retriever, rrf_k=fusion_cfg.get("rrf_k", 60))
+                fusion = RRFFusion(retriever, rrf_k=fusion_cfg.get("k", fusion_cfg.get("rrf_k", 60)))
             retriever.fusion = fusion
 
         start_time = time.time()
@@ -694,7 +684,7 @@ class CacheGraphRAG:
         Args:
             start: Start index
             end: End index
-            build_phase: "base" or "incremental", controls whoqa dataset phase_1/phase_2 loading
+            build_phase: "base" or "incremental", controls specificqa dataset phase_1/phase_2 loading
         """
         self.build_phase = build_phase
         try:
@@ -986,7 +976,7 @@ if __name__ == "__main__":
     if ret_cfg.get("index_only", False):
         # Incremental experiment: Phase 1 (base) → Phase 2 (incremental)
         inc_exp = cfg.get("incremental_experiment", {})
-        if inc_exp.get("enabled") and "whoqa" in data_cfg.get("dataset", ""):
+        if inc_exp.get("enabled") and "specificqa" in data_cfg.get("dataset", ""):
             # Clear Nebula L2 to start from scratch
             if app.mem_graph.persistent_graph:
                 try:

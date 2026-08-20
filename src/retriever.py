@@ -253,16 +253,26 @@ class BaseRetriever:
 # ================================================================
 
 class HybridRetriever(BaseRetriever):
-    """Traditional retrieval: extract entities via milvus or LLM → 2-hop graph traversal → equal weighting."""
+    """Traditional retrieval: extract entities via milvus or LLM → graph traversal → equal weighting.
+
+    Configurable hyperparameters (from config/config.yaml → retrieval):
+        gamma: hop-decay weight (gamma^l). Default 0.5 → [1.0, 0.5, 0.25, ...]
+        B: beam width (top-B nodes per hop). Default 5.
+        max_hops: maximum BFS hops. Default 10.
+    """
 
     def __init__(self, vector_store=None, entity_index_name="entity_index_example",
                  memory_graph=None, llm=None, reranker=None, chunk_registry=None,
-                 entity_extraction: str = "milvus", mode="hybrid"):
+                 entity_extraction: str = "milvus", mode="hybrid",
+                 gamma: float = 0.5, B: int = 5, max_hops: int = 10):
         super().__init__(vector_store=vector_store, memory_graph=memory_graph,
                          llm=llm, reranker=reranker, chunk_registry=chunk_registry,
                          mode=mode)
         self.entity_index_name = entity_index_name
         self.entity_extraction = entity_extraction
+        self.gamma = gamma          # hop-decay weight
+        self.B = B                  # beam width
+        self.max_hops = max_hops    # max traversal hops
         self._entity_store = MilvusDB(
             db_name=entity_index_name, overwrite=False,
             embed_model=llm.embed_model if llm else None)
@@ -415,9 +425,11 @@ class HybridRetriever(BaseRetriever):
         for mid in matched_id_set:
             node_set.update(self.memory_graph.get_nodes_by_id(mid))
 
-        # BFS decay propagation: hop 0=1.0, hop 1=0.5, hop 2=0.3
-        HOP_WEIGHTS = [1.0, 0.5, 0.3]
-        HOP_TOPK = [0, 5, 5]  # hop 0 unlimited, hop 1 take top 5, hop 2 take top 5
+        # BFS decay propagation with configurable gamma and beam width B
+        # hop 0=1.0, hop 1=gamma, hop 2=gamma^2, ... (clamped to 3 levels)
+        gamma = self.gamma
+        HOP_WEIGHTS = [1.0, gamma, gamma * gamma]
+        HOP_TOPK = [0, self.B, self.B]  # hop 0 unlimited, hop 1/2 take top-B
         chunk_scores, node_scores, node_chunks = {}, {}, {}
 
         def add_score(chunks_data, weight):
@@ -453,7 +465,7 @@ class HybridRetriever(BaseRetriever):
         # hop 0: seed entity
         frontier = set(node_set)
         visited = set()
-        for hop in range(10):  # Max 10 hops to prevent infinite loops
+        for hop in range(self.max_hops):  # Configurable max hops to prevent infinite loops
             if not frontier:
                 break
             hop_weight = entity_weight * HOP_WEIGHTS[min(hop, len(HOP_WEIGHTS) - 1)]
