@@ -17,14 +17,14 @@ data:
 model:
   backend: openai
   model_name: gpt-4o-mini
-  api_key: sk-Tgx20NMc8Skgc72I0b5fB609A0204b83A972C85c38E7913d
-  base_url: https://gptgod.cloud/v1
+  api_key: sk-xxx
+  base_url: xxx
 
 embedding:
   backend: api
   model_name: BAAI/bge-m3
-  api_key: sk-jesbcjbjkzkksbdwqxsqrvpxabrrygnkhwekwhucgccfomqo
-  base_url: https://api.siliconflow.cn/v1
+  api_key: sk-xxx
+  base_url: xxx
 
 retrieval:
   mode: hybrid               # hybrid | graph_only | dpr_only
@@ -86,8 +86,8 @@ rerank:
   backend: api                # local | api | none
   model_name: BAAI/bge-reranker-v2-m3
   # local_path: /path/to/bge-reranker-v2-m3  # required if backend=local
-  api_key: sk-jesbcjbjkzkksbdwqxsqrvpxabrrygnkhwekwhucgccfomqo
-  base_url: https://api.siliconflow.cn/v1
+  api_key: sk-xxx
+  base_url: xxx
 
 fact_retrieval:
   enabled: false
