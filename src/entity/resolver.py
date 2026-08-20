@@ -30,12 +30,14 @@ class AsyncEntityResolver:
         memory_graph=None,
         embed_model=None,
         embedding_concurrency=5,
+        tau_desc=0.5,
     ):
         self.milvus_db = MilvusDB(db_name=collection_name, overwrite=False, embed_model=embed_model)
         self.milvus_client = myMilvus()
         self.embed = embedding_func
         self.collection_name = collection_name
-        self.threshold = threshold
+        self.threshold = threshold          # tau_sim: vector similarity threshold
+        self.tau_desc = tau_desc             # tau_desc: description similarity threshold
         self.memory_graph = memory_graph
         self._embed_semaphore = asyncio.Semaphore(embedding_concurrency)
         self.embed_model = embed_model
@@ -331,7 +333,7 @@ class AsyncEntityResolver:
                 self._pending_tasks.append(task)
                 return new_uid
             # Same name, different type + similar desc: type extraction deviation, treat as same entity
-            elif name_match and (not entity_type) and (not type_match) and desc_sim >= 0.5:
+            elif name_match and (not entity_type) and (not type_match) and desc_sim >= self.tau_desc:
                 self.local_cache[cache_key] = exist_uid
                 return exist_uid
             # Abbreviation/short form: create new UID + alias_of edge

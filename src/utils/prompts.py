@@ -115,31 +115,6 @@ prompt_plan_next_step_str = """
     }}
 	
 """
-# prompt_answer_with_chunks_str = """
-# You are an expert question-answering assistant. Your task is to answer the user's question based strictly on the provided context.
-
-# ### Instructions:
-# 1. Carefully read all the provided context chunks. The "ts" field represents the latest update time of the chunk, you should use it as an important basis for judging the credibility of the text.
-# 2. The exact phrasing of the answer might not be explicitly stated. You are allowed to make logical deductions and synthesize information ONLY if the evidence is strongly supported by the context.
-# 3. If the context completely lacks relevant information to answer the question, output "I don't know." in the "final_answer" field.
-# 4. **Preserve Units and Conditions:** Never drop essential units, metrics, or qualifying conditions. If the text specifies a condition alongside a value (e.g., "$100 per seat", "50 miles per hour"), you MUST include the complete phrase in your final answer.
-# 5. Provide your thought process in the "reasoning" field first. Then, provide the final answer in the "final_answer" field. Keep it concise (typically 1-8 words), but ALWAYS prioritize completeness and accuracy over strict brevity.
-
-# ### Context:
-# <context>
-# {context}
-# </context>
-
-# ### Question:
-# {query}
-
-# ### Output Format (Strictly JSON):
-# {{
-#   "reasoning": "Briefly explain how you found the answer from the context.",
-#   "final_answer": "Complete and concise answer here, including necessary units or full names."
-# }}
-
-# """
 
 prompt_answer_with_chunks_str = """
 You are an expert question-answering assistant. Answer the user's question strictly based on the provided context. Follow the three-step reasoning process below.
@@ -173,39 +148,9 @@ You are an expert question-answering assistant. Answer the user's question stric
 {{
   "step1_candidates": "List all candidate answer snippets with exact quotes from the context, or 'None'.",
   "step2_analysis": "Compare candidates, resolve conflicts, check sufficiency.",
-  "final_answer": "Complete and concise answer including necessary units or absolute dates, or 'I don not know.'."
+  "final_answer": "Complete and concise answer including necessary units or absolute dates, or 'I don not know.'"
 }}
 """
-
-# for whoqa dataset
-# prompt_answer_with_chunks_str = """
-# You are an expert question-answering assistant. Your task is to answer the user's question based strictly on the provided context.
-
-# ### Instructions:
-# 1. **Context Credibility:** Carefully read all provided context chunks. The "ts" field represents the latest update time of the chunk.
-# 2. **SAME-NAME ENTITY DISAMBIGUATION (CRUCIAL WARNING):** The context deliberately contains multiple DIFFERENT entities that share the EXACT SAME NAME (e.g., multiple people named "Charles Fox", or multiple movies/organizations with the same title). The user's query contains specific distinguishing clues (e.g., birth/death dates, locations, relatives, specific events). You MUST use these clues to isolate the *one correct entity* from the identically-named distractors.
-# 3. **Partial/Majority Matching:** If a chunk matches the *majority* or the most highly specific clues (e.g., exact death date and sibling name), consider it the correct entity. Do not reject it over one minor omitted clue (like a missing birth date), provided there are no direct contradictions.
-# 4. **Target Attribute Extraction:** Once the correct entity is isolated, carefully identify exactly what the user is asking for (e.g., "genre", "male parent", "profession", "country"). Extract ONLY the most concise noun phrase explicitly stated in the text that answers this specific question.
-# 5. **Strict Grounding:** Do NOT use your external knowledge under any circumstances.You MUST speculate the most likely answer based on the provided context. If the correct entity's chunks do not contain the requested information, you MUST output "I don't know." in the "final_answer" field.
-# 6. **Gather Before Concluding (CoT):** You MUST systematically follow these exact steps in the "reasoning" field:
-#     - Step 1: List all candidate entities from the chunks that match the core subject/name of the query. Quote their distinguishing details.
-#     - Step 2: Compare these quoted details against the specific clues in the query to successfully isolate the ONE correct entity.
-#     - Step 3: Identify the specific requested attribute (What is the query actually asking for?). Look ONLY at the matched chunk. If the answer is there, extract it concisely. If it is missing, explicitly state that it is missing and prepare to output "I don't know.".
-
-# ### Context:
-# <context>
-# {context}
-# </context>
-
-# ### Question:
-# {query}
-
-# ### Output Format (Strictly JSON):
-# {{
-#   "reasoning": "Step 1: [List candidate entities with exact quotes] Step 2: [Match clues to isolate the correct candidate] Step 3: [Identify requested attribute and extract it, or declare it missing]",
-#   "final_answer": "Complete and concise noun or short phrase here, or 'I don't know.' if the text lacks the answer."
-# }}
-# """
 
 prompt_sub_answer_lite_str = """
 You are a quick search assistant. Please answer the sub-questions directly based on the context.

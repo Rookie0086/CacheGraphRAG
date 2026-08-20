@@ -1,0 +1,42 @@
+{
+  "MS-GraphRAG": {
+    "description": "Microsoft GraphRAG (no inference optimization)",
+    "index_time_s": 4127,
+    "retrieval_answer_time_s_per_q": 8.5,
+    "llm_calls_index": 12000,
+    "llm_calls_retrieval": 1,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "accuracy": 0.74
+  },
+  "HyperGraphRAG": {
+    "description": "HyperGraphRAG (LLM-heavy: LLM-based entity resolution + summarization)",
+    "index_time_s": 6200,
+    "retrieval_answer_time_s_per_q": 12.3,
+    "llm_calls_index": 35000,
+    "llm_calls_retrieval": 5,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "accuracy": 0.75
+  },
+  "KAG": {
+    "description": "KAG (Knowledge Augmented Generation, LLM-heavy)",
+    "index_time_s": 5500,
+    "retrieval_answer_time_s_per_q": 10.8,
+    "llm_calls_index": 28000,
+    "llm_calls_retrieval": 3,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "accuracy": 0.74
+  },
+  "LightRAG": {
+    "description": "LightRAG (name-keyed dedup, encoder similarity)",
+    "index_time_s": 2497,
+    "retrieval_answer_time_s_per_q": 4.2,
+    "llm_calls_index": 8000,
+    "llm_calls_retrieval": 1,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "accuracy": 0.72
+  }
+}

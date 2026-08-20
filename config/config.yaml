@@ -1,26 +1,39 @@
+# ── CacheGraphRAG Global Configuration ──────────────────────────
+# All hyperparameters referenced in the paper are explicitly named here.
+# Paper notation → config key mapping:
+#   tau_sim  → entity_alignment.tau_sim
+#   tau_desc → entity_alignment.tau_desc
+#   tau_hit  → indexing.tau_hit (= promotion_threshold)
+#   C_max    → indexing.C_max (= l1_max_chunks)
+#   gamma    → retrieval.gamma (hop-decay weight)
+#   B        → retrieval.B (beam width for graph traversal)
+#   k        → fusion.k (= rrf_k)
+
 data:
-  dataset: rgb_en_refine
-  end: 300
+  dataset: hotpotqa
   start: 0
+  end: 120
 
 model:
-  backend: ollama
-  model_name: llama3.1:8b
-  base_url: http://localhost:11434
+  backend: openai
+  model_name: gpt-4o-mini
+  api_key: sk-Tgx20NMc8Skgc72I0b5fB609A0204b83A972C85c38E7913d
+  base_url: https://gptgod.cloud/v1
 
 embedding:
-  backend: ollama
-  model_name: nomic-embed-text
-  base_url: http://localhost:11434
+  backend: api
+  model_name: BAAI/bge-m3
+  api_key: sk-jesbcjbjkzkksbdwqxsqrvpxabrrygnkhwekwhucgccfomqo
+  base_url: https://api.siliconflow.cn/v1
 
 retrieval:
-  mode: hybrid           # RGB baseline = 混合检索(DPR+图)
-  entity_extraction: llm     # baseline 使用 LLM 提取实体
-  skip_index: false
-  index_only: false
-  nebula_space: rgb_en_refine
-  chunk_collection: rgb_en_refine
-  entity_index_name: entity_index_rgb_en_refine
+  mode: hybrid               # hybrid | graph_only | dpr_only
+  entity_extraction: llm      # llm | milvus (entity source for query)
+  skip_index: false           # true = skip indexing, run QA only
+  index_only: false           # true = build index only, no QA
+  nebula_space: hotpotqa
+  chunk_collection: hotpotqa
+  entity_index_name: entity_index_hotpotqa
   top_chunks: 15
   answer_topk: 6
   batch_size: 20
@@ -34,23 +47,34 @@ retrieval:
   promotion_retries: 2
   qa_concurrency: 5
   resume_gexf: ''
+  # ── Graph traversal hyperparameters ──
+  gamma: 0.5                  # hop-decay weight (gamma^l): hop0=1.0, hop1=0.5, hop2=0.3
+  B: 5                         # beam width (top-B nodes per hop for graph traversal)
+  max_hops: 10                 # max BFS hops to prevent infinite loops
 
 indexing:
   chunk_size: 800
   chunk_overlap: 100
-  l1_max_chunks: 0
-  l1_max_nodes: 0
-  l1_ttl_seconds: 3600
+  C_max: 100                   # L1 cache capacity limit (max chunks in memory)
+  l1_max_chunks: 100           # alias for C_max
+  l1_max_nodes: 0              # 0 = unlimited
+  l1_ttl_seconds: 3600         # L1 TTL for LRU+TTL eviction
   build_concurrency: 15
   chunk_concurrency: 20
   llm_concurrency: 20
-  offline_alignment: true
-  promotion_threshold: 3
-  prune_interval: 5
+  offline_alignment: true      # Funnel Alignment: batch embed + align
+  tau_hit: 3                   # promotion threshold h(c) >= tau_hit → promote to L2
+  promotion_threshold: 3        # alias for tau_hit
+  prune_interval: 5            # background prune interval (seconds)
+
+entity_alignment:
+  tau_sim: 0.85                # vector similarity threshold for entity matching
+  tau_desc: 0.5                # description similarity threshold (same name, different desc)
 
 fusion:
-  method: rrf
-  rrf_k: 60
+  method: rrf                  # rrf | weighted | dual
+  k: 60                        # RRF k parameter
+  rrf_k: 60                    # alias for k
   dpr_weight: 0.5
   graph_reserve: 2
   overlap_reserve: 2
@@ -59,8 +83,11 @@ fusion:
   convergence_boost: 1.3
 
 rerank:
-  backend: local
+  backend: api                # local | api | none
   model_name: BAAI/bge-reranker-v2-m3
+  # local_path: /path/to/bge-reranker-v2-m3  # required if backend=local
+  api_key: sk-jesbcjbjkzkksbdwqxsqrvpxabrrygnkhwekwhucgccfomqo
+  base_url: https://api.siliconflow.cn/v1
 
 fact_retrieval:
   enabled: false
