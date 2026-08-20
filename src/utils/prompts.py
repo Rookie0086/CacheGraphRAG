@@ -148,7 +148,7 @@ You are an expert question-answering assistant. Answer the user's question stric
 {{
   "step1_candidates": "List all candidate answer snippets with exact quotes from the context, or 'None'.",
   "step2_analysis": "Compare candidates, resolve conflicts, check sufficiency.",
-  "final_answer": "Complete and concise answer including necessary units or absolute dates, or 'I don not know.'"
+  "final_answer": "Complete and concise answer including necessary units or absolute dates, or 'I don't know'"
 }}
 """
 
